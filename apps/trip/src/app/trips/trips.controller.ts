@@ -25,7 +25,7 @@ export class TripsController {
 
   @MessagePattern('updateTrip')
   update(@Payload() updateTripDto: UpdateTripDto) {
-    return this.tripsService.update(updateTripDto.id, updateTripDto);
+    // return this.tripsService.update(updateTripDto.id, updateTripDto);
   }
 
   @MessagePattern('removeTrip')

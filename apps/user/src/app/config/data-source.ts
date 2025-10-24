@@ -5,12 +5,12 @@ import { User } from "../users/entities/user.entity";
 import { DriverProfile } from "../users/entities/driver-profile.entity";
 
 // Load .env from project root (absolute path)
-config({ path: join(__dirname, '../../../../.env') });
+config({ path: join(process.cwd(), '.env') });
 
 export const dataSourceOptions: DataSourceOptions = {
     type: 'postgres',
     host: process.env.USERDB_HOST,
-    port: parseInt(process.env.USERDB_PORT || "5432"),
+    port: parseInt(process.env.USERDB_PORT || "5433"),
     username: process.env.USERDB_USERNAME,
     password: process.env.USERDB_PASSWORD,
     database: process.env.USERDB_DATABASE,

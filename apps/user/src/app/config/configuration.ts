@@ -13,10 +13,10 @@ export const userConfigValidation = Joi.object({
         .valid('development', 'production', 'test')
         .default('development'), 
 
-    USER_SERVICE_PORT: Joi.number().default(3001),
+    USER_SERVICE_PORT: Joi.number().default(3002),
 
     USERDB_HOST: Joi.string().required(),
-    USERDB_PORT: Joi.number().default(5432),
+    USERDB_PORT: Joi.number().default(5433),
     USERDB_USERNAME: Joi.string().required(),
     USERDB_PASSWORD: Joi.string().required(),
     USERDB_DATABASE: Joi.string().required()

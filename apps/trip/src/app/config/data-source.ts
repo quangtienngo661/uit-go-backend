@@ -5,12 +5,12 @@ import { Trip } from "../trips/entities/trip.entity";
 import { Rating } from "../trips/entities/rating.entity";
 
 // Load .env file with absolute path
-config({ path: join(__dirname, '../../../../.env') });
+config({ path: join(process.cwd(), '.env') });
 
 export const dataSourceOptions: DataSourceOptions = {
     type: 'postgres',
     host: process.env.TRIPDB_HOST,
-    port: parseInt(process.env.TRIPDB_PORT || "5433"),  // Fixed: was USERDB_PORT
+    port: parseInt(process.env.TRIPDB_PORT || "5434"),  // Fixed: was USERDB_PORT
     username: process.env.TRIPDB_USERNAME,
     password: process.env.TRIPDB_PASSWORD,
     database: process.env.TRIPDB_DATABASE,

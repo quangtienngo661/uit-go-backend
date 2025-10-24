@@ -4,12 +4,12 @@ import { join } from 'path';
 import { Driver } from "../drivers/entities/driver.entity";
 
 // Load .env file with absolute path
-config({ path: join(__dirname, '../../../../.env') });
+config({ path: join(process.cwd(), '.env') });
 
 export const dataSourceOptions: DataSourceOptions = {
     type: 'postgres',
     host: process.env.DRIVERDB_HOST,
-    port: parseInt(process.env.DRIVERDB_PORT || "5434"),
+    port: parseInt(process.env.DRIVERDB_PORT || "5435"),
     username: process.env.DRIVERDB_USERNAME,
     password: process.env.DRIVERDB_PASSWORD,
     database: process.env.DRIVERDB_DATABASE,

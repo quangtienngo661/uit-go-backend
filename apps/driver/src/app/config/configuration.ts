@@ -13,10 +13,10 @@ export const driverConfigValidation = Joi.object({
         .valid('development', 'production', 'test')
         .default('development'), 
 
-    DRIVER_SERVICE_PORT: Joi.number().default(3003),
+    DRIVER_SERVICE_PORT: Joi.number().default(3004),
 
     DRIVERDB_HOST: Joi.string().required(),
-    DRIVERDB_PORT: Joi.number().default(5434),
+    DRIVERDB_PORT: Joi.number().default(5435),
     DRIVERDB_USERNAME: Joi.string().required(),
     DRIVERDB_PASSWORD: Joi.string().required(),
     DRIVERDB_DATABASE: Joi.string().required()

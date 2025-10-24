@@ -25,7 +25,7 @@ export class UsersController {
 
   @MessagePattern('updateUser')
   update(@Payload() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(updateUserDto.id, updateUserDto);
+    // return this.usersService.update(updateUserDto.id, updateUserDto);
   }
 
   @MessagePattern('removeUser')

@@ -13,10 +13,10 @@ export const tripConfigValidation = Joi.object({
         .valid('development', 'production', 'test')
         .default('development'), 
 
-    TRIP_SERVICE_PORT: Joi.number().default(3002),
+    TRIP_SERVICE_PORT: Joi.number().default(3003),
 
     TRIPDB_HOST: Joi.string().required(),
-    TRIPDB_PORT: Joi.number().default(5433),
+    TRIPDB_PORT: Joi.number().default(5434),
     TRIPDB_USERNAME: Joi.string().required(),
     TRIPDB_PASSWORD: Joi.string().required(),
     TRIPDB_DATABASE: Joi.string().required()
