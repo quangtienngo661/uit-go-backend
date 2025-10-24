@@ -6,6 +6,7 @@ import { configuration, tripConfigValidation } from './config/configuration';
 import { tripDbAsyncConfig } from './config/ormConfig';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TripsModule } from './trips/trips.module';
+import { PricingsModule } from './pricings/pricings.module';
 
 @Module({
    imports: [
@@ -17,7 +18,8 @@ import { TripsModule } from './trips/trips.module';
       validationSchema: tripConfigValidation
     }),
     TripsModule,
-    TypeOrmModule.forRootAsync(tripDbAsyncConfig)
+    TypeOrmModule.forRootAsync(tripDbAsyncConfig),
+    PricingsModule
   ],
   controllers: [AppController],
   providers: [AppService],
