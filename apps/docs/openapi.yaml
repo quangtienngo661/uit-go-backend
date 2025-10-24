@@ -1,0 +1,674 @@
+openapi: 3.0.3
+info:
+  title: UIT-Go Public API
+  version: 1.0.0
+  description: |
+    Public HTTP API for UIT-Go
+    - Auth: Bearer JWT
+    - Errors: RFC7807 (application/problem+json)
+    - Monetary numbers are decimal with 2 fraction digits.
+servers:
+  - url: https://api.uit-go.vn/v1
+tags:
+  - name: Auth
+  - name: Users
+  - name: Drivers
+  - name: Trips
+  - name: Ratings
+  - name: Notifications
+
+paths:
+  /users:
+    post:
+      tags: [Users]
+      summary: Register a new user (passenger or driver)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            X-Request-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /sessions:
+    post:
+      tags: [Auth]
+      summary: Login with email/password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: OK
+          headers:
+            X-Request-Id: { schema: { type: string } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /driver-profiles/me:
+    get:
+      tags: [Users]
+      summary: Get current user's driver profile (if any)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DriverProfile' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /drivers/{id}/status:
+    patch:
+      tags: [Drivers]
+      summary: Toggle driver online/offline (and bind vehicleType)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { $ref: '#/components/schemas/DriverStatus' }
+                vehicleType: { $ref: '#/components/schemas/VehicleType' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Driver' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /drivers/{id}/location:
+    put:
+      tags: [Drivers]
+      summary: Update current driver location (lat/lng)
+      description: Redis is primary; DB column acts as fallback / audit.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lat, lng]
+              properties:
+                lat: { type: number, format: double }
+                lng: { type: number, format: double }
+                at: { type: string, format: date-time, description: 'Client-side timestamp (optional)' }
+      responses:
+        '202':
+          description: Accepted (location queued/applied)
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /drivers/search:
+    get:
+      tags: [Drivers]
+      summary: Find nearby online drivers by geospatial query
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: lat
+          required: true
+          schema: { type: number, format: double }
+        - in: query
+          name: lng
+          required: true
+          schema: { type: number, format: double }
+        - in: query
+          name: radiusMeters
+          schema: { type: integer, minimum: 100, maximum: 20000, default: 3000 }
+        - in: query
+          name: vehicleType
+          schema: { $ref: '#/components/schemas/VehicleType' }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/NearbyDriver' }
+
+  /trips:
+    post:
+      tags: [Trips]
+      summary: Create a trip request (passenger)
+      description: Use Idempotency-Key to avoid duplicate trip creation.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateTripRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Trip' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /trips/{id}:
+    get:
+      tags: [Trips]
+      summary: Get trip by id
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Trip' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /trips/{id}/accept:
+    post:
+      tags: [Trips]
+      summary: Driver accepts trip
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Trip' }
+        '409': { $ref: '#/components/responses/Conflict' }   # e.g., already accepted
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /trips/{id}/complete:
+    post:
+      tags: [Trips]
+      summary: Driver marks trip as completed (finalize price & stats)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                finalPrice: { type: number }
+                distanceKm: { type: number }
+      responses:
+        '200':
+          description: Completed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Trip' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /trips/{id}/cancel:
+    post:
+      tags: [Trips]
+      summary: Cancel a trip (by passenger or driver)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cancelledBy]
+              properties:
+                cancelledBy:
+                  type: string
+                  enum: [passenger, driver]
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Trip' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /ratings:
+    post:
+      tags: [Ratings]
+      summary: Rate after trip (driver or passenger)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRatingRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Rating' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+    get:
+      tags: [Ratings]
+      summary: List ratings for a user or a trip
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: tripId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: userId
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CursorPageRating' }
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications for current user
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: unreadOnly
+          schema: { type: boolean, default: false }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CursorPageNotification' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+    post:
+      tags: [Notifications]
+      summary: Create a notification (internal/admin)
+      description: Intended for internal usage (service-to-service) to push notifications.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateNotificationRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Notification' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /notifications/{id}/read:
+    post:
+      tags: [Notifications]
+      summary: Mark a notification as read
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204':
+          description: No Content
+        '404': { $ref: '#/components/responses/NotFound' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Cursor:
+      in: query
+      name: cursor
+      schema: { type: string, nullable: true }
+    Limit:
+      in: query
+      name: limit
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    IdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      schema: { type: string }
+      required: false
+      description: Avoid duplicate processing for create operations
+
+  schemas:
+    # ========= Common =========
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+    CursorPageRating:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Rating' }
+        nextCursor: { type: string, nullable: true }
+    CursorPageNotification:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Notification' }
+        nextCursor: { type: string, nullable: true }
+
+    # ========= Enums =========
+    Role:
+      type: string
+      enum: [passenger, driver, admin]
+    VerificationStatus:
+      type: string
+      enum: [pending, approved, rejected]
+    VehicleType:
+      type: string
+      enum: [motorbike, car_sedan, car_suv, car_van]
+    DriverStatus:
+      type: string
+      enum: [offline, online]
+    TripStatus:
+      type: string
+      enum: [searching, accepted, enroute_pickup, in_progress, completed, cancelled]
+
+    # ========= Auth / Users =========
+    RegisterUserRequest:
+      type: object
+      required: [email, password, fullName, role]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        fullName: { type: string }
+        role: { $ref: '#/components/schemas/Role' }
+        phone: { type: string }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+    LoginResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        user: { $ref: '#/components/schemas/User' }
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        fullName: { type: string }
+        phone: { type: string, nullable: true }
+        avatarUrl: { type: string, nullable: true }
+        role: { $ref: '#/components/schemas/Role' }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    DriverProfile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        vehicleType: { $ref: '#/components/schemas/VehicleType' }
+        licensePlate: { type: string }
+        vehicleModel: { type: string, nullable: true }
+        vehicleColor: { type: string, nullable: true }
+        verificationStatus: { $ref: '#/components/schemas/VerificationStatus' }
+        rating: { type: number, format: float }
+        totalTrips: { type: integer }
+        totalRevenue: { type: number }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    # ========= Drivers =========
+    Driver:
+      type: object
+      description: Runtime driver state (separate from DriverProfile)
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/DriverStatus' }
+        currentLat: { type: number, format: double, nullable: true }
+        currentLng: { type: number, format: double, nullable: true }
+        lastLocationUpdate: { type: string, format: date-time, nullable: true }
+        currentTripId: { type: string, format: uuid, nullable: true }
+        statsDate: { type: string, format: date }
+        dailyTrips: { type: integer }
+        dailyRevenue: { type: number }
+        lastActiveAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    NearbyDriver:
+      type: object
+      properties:
+        driverId: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        distanceMeters: { type: number }
+        vehicleType: { $ref: '#/components/schemas/VehicleType' }
+        rating: { type: number, format: float, nullable: true }
+
+    # ========= Trips =========
+    CreateTripRequest:
+      type: object
+      required:
+        [ pickupLat, pickupLng, pickupAddress, dropoffLat, dropoffLng, dropoffAddress, vehicleType ]
+      properties:
+        pickupLat: { type: number, format: double }
+        pickupLng: { type: number, format: double }
+        pickupAddress: { type: string }
+        dropoffLat: { type: number, format: double }
+        dropoffLng: { type: number, format: double }
+        dropoffAddress: { type: string }
+        vehicleType: { $ref: '#/components/schemas/VehicleType' }
+    Trip:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        passengerId: { type: string, format: uuid }
+        driverId: { type: string, format: uuid, nullable: true }
+        pickupLat: { type: number, format: double }
+        pickupLng: { type: number, format: double }
+        pickupAddress: { type: string }
+        dropoffLat: { type: number, format: double }
+        dropoffLng: { type: number, format: double }
+        dropoffAddress: { type: string }
+        vehicleType: { $ref: '#/components/schemas/VehicleType' }
+        tripStatus: { $ref: '#/components/schemas/TripStatus' }
+        distanceKm: { type: number, nullable: true }
+        estimatedPrice: { type: number, nullable: true }
+        finalPrice: { type: number, nullable: true }
+        cancelledBy:
+          type: string
+          nullable: true
+          enum: [passenger, driver]
+        createdAt: { type: string, format: date-time }
+        acceptedAt: { type: string, format: date-time, nullable: true }
+        completedAt: { type: string, format: date-time, nullable: true }
+        cancelledAt: { type: string, format: date-time, nullable: true }
+        updatedAt: { type: string, format: date-time }
+
+    # ========= Ratings =========
+    CreateRatingRequest:
+      type: object
+      required: [tripId, ratedBy, ratedUser, raterRole, rating]
+      properties:
+        tripId: { type: string, format: uuid }
+        ratedBy: { type: string, format: uuid }
+        ratedUser: { type: string, format: uuid }
+        raterRole:
+          type: string
+          enum: [passenger, driver]
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment: { type: string, nullable: true }
+    Rating:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tripId: { type: string, format: uuid }
+        ratedBy: { type: string, format: uuid }
+        ratedUser: { type: string, format: uuid }
+        raterRole:
+          type: string
+          enum: [passenger, driver]
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    # ========= Notifications =========
+    NotificationType:
+      type: string
+      enum:
+        - trip.requested
+        - trip.accepted
+        - trip.arriving
+        - trip.started
+        - trip.completed
+        - trip.cancelled
+        - rating.received
+    Notification:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/NotificationType' }
+        title: { type: string }
+        body: { type: string }
+        data:
+          type: object
+          additionalProperties: true
+          description: Arbitrary JSON payload (e.g., tripId)
+        isRead: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        readAt: { type: string, format: date-time, nullable: true }
+    CreateNotificationRequest:
+      type: object
+      required: [userId, type, title, body]
+      properties:
+        userId: { type: string, format: uuid }
+        type: { $ref: '#/components/schemas/NotificationType' }
+        title: { type: string }
+        body: { type: string }
+        data:
+          type: object
+          additionalProperties: true
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
