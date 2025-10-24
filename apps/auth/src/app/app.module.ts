@@ -17,7 +17,7 @@ import { authDbAsynConfig } from './config/ormConfig';
       validationSchema: authConfigValidation,
       cache: true
     }),
-    TypeOrmModule.forRootAsync(authDbAsynConfig)
+    // TypeOrmModule.forRootAsync(authDbAsynConfig)
   ],
   controllers: [AppController],
   providers: [AppService],

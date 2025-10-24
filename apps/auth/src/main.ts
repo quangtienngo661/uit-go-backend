@@ -6,15 +6,30 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  const globalPrefix = 'api';
-  app.setGlobalPrefix(globalPrefix);
+  // Logger.log(process.cwd());
+  
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AppModule, 
+    {
+      transport: Transport.GRPC, 
+      options: {
+        url: `0.0.0.0:3001`,
+        package: 'authPackage', 
+        protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/auth.proto'), 
+      }
+    }
+  );
+
   const port = process.env.AUTH_SERVICE_PORT || 3001;
-  await app.listen(port);
+
+  await app.listen()
+
   Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`
+    `🚀 Auth Service is running on gRPC port ${port}`
   );
 }
 
