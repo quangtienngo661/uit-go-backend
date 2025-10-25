@@ -9,14 +9,14 @@ import { authDbAsynConfig } from './config/ormConfig';
 
 @Module({
   imports: [
-    AuthModule,
-    ConfigModule.forRoot({
-      envFilePath: '../../../.env',
-      load: [configuration],
-      isGlobal: true,
-      validationSchema: authConfigValidation,
-      cache: true
-    }),
+    // AuthModule,
+    // ConfigModule.forRoot({
+    //   envFilePath: '../../../.env',
+    //   load: [configuration],
+    //   isGlobal: true,
+    //   validationSchema: authConfigValidation,
+    //   cache: true
+    // }),
     // TypeOrmModule.forRootAsync(authDbAsynConfig)
   ],
   controllers: [AppController],

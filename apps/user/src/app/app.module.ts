@@ -10,10 +10,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 @Module({
    imports: [
     ConfigModule.forRoot({
-      envFilePath: '../../../.env', 
-      isGlobal: true, 
+      envFilePath: '../../../.env',
+      isGlobal: true,
       cache: true,
-      load: [configuration], 
+      load: [configuration],
       validationSchema: userConfigValidation
     }),
     UsersModule,

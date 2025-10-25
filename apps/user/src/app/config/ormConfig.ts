@@ -6,20 +6,20 @@ import { DriverProfile } from "../users/entities/driver-profile.entity";
 
 
 export const userDbAsyncConfig: TypeOrmModuleAsyncOptions = {
-    imports: [ConfigModule], 
-    inject: [ConfigService], 
+    imports: [ConfigModule],
+    inject: [ConfigService],
     useFactory: (configService: ConfigService) => ({
-        type: 'postgres', 
+        type: 'postgres',
         host: configService.get('USERDB_HOST'),
         port: +configService.get('USERDB_PORT'),
         username: configService.get('USERDB_USERNAME'),
         password: configService.get('USERDB_PASSWORD'),
         database: configService.get('USERDB_DATABASE'),
-        entities: [User, DriverProfile], 
+        entities: [User, DriverProfile],
 
-        synchronize: false, 
-        migrations: [__dirname + '/../migrations/*{.ts, .js}'], 
+        synchronize: false,
+        migrations: [__dirname + '/../migrations/*{.ts, .js}'],
         migrationsRun: false, // Don't auto run (use CLI instead)
-        logging: true, 
+        logging: true,
     })
 };

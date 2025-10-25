@@ -11,15 +11,14 @@ import { join } from 'path';
 
 async function bootstrap() {
   // Logger.log(process.cwd());
-  
+
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule, 
+    AppModule,
     {
-      transport: Transport.GRPC, 
+      transport: Transport.TCP,
       options: {
-        url: `0.0.0.0:3001`,
-        package: 'authPackage', 
-        protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/auth.proto'), 
+        host: '127.0.0.1',
+        port: 3001
       }
     }
   );
@@ -29,7 +28,7 @@ async function bootstrap() {
   await app.listen()
 
   Logger.log(
-    `🚀 Auth Service is running on gRPC port ${port}`
+    `🚀 Auth Service is running on TCP port ${port}`
   );
 }
 

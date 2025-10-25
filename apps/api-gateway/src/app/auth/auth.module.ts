@@ -9,11 +9,10 @@ import { join } from 'path';
     ClientsModule.register([
       {
         name: 'AUTH_SERVICE',
-        transport: Transport.GRPC,
+        transport: Transport.TCP,
         options: {
-          package: 'authPackage',
-          protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/auth.proto'),
-          url: '0.0.0.0:3001'
+          host: '0.0.0.0',
+          port: 3001
         }
       }
     ])

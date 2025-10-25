@@ -1,7 +1,15 @@
-syntax = "proto3"; 
+syntax = "proto3";
 
 package driverPackage;
 
 service DriverService {
-    
+  rpc Ping (PingRequest) returns (PingResponse);
+
+}
+
+// dummy data to run the service
+message PingRequest {}
+
+message PingResponse {
+  string message = 1;
 }
