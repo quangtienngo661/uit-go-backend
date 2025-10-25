@@ -14,7 +14,6 @@ tags:
   - name: Users
   - name: Drivers
   - name: Trips
-  - name: Ratings
   - name: Notifications
 
 paths:
@@ -301,9 +300,9 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
 
-  /ratings:
+  /trips/{id}/rating:
     post:
-      tags: [Ratings]
+      tags: [Trips]
       summary: Rate after trip (driver or passenger)
       security: [{ bearerAuth: [] }]
       requestBody:
@@ -320,9 +319,8 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '409': { $ref: '#/components/responses/Conflict' }
-
     get:
-      tags: [Ratings]
+      tags: [Trips]
       summary: List ratings for a user or a trip
       security: [{ bearerAuth: [] }]
       parameters:
@@ -340,6 +338,7 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/CursorPageRating' }
+
 
   /notifications:
     get:
