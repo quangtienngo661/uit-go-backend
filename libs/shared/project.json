@@ -14,7 +14,7 @@
       "options": {
         "commands": [
           {
-            "command": "if not exist libs\\shared\\src\\lib\\gen mkdir libs\\shared\\src\\lib\\gen"
+            "command": "mkdir -p libs/shared/src/lib/gen"
           },
           {
             "command": "npx protoc --ts_proto_out=libs/shared/src/lib/gen --ts_proto_opt=nestJs=true --proto_path=libs/shared/src/lib/protos libs/shared/src/lib/protos/*.proto"

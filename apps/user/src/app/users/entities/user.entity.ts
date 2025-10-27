@@ -13,7 +13,7 @@ export class User {
   @Column({ name: 'email', type: 'varchar', length: 255, unique: true, nullable: false })
   email: string;
 
-  @Column({ name: 'password_hash', type: 'varchar', length: 255, nullable: false, select: false })
+  @Column({ name: 'password_hash', type: 'varchar', length: 255, nullable: true, select: false })
   passwordHash: string;
 
   // Profile
@@ -27,10 +27,10 @@ export class User {
   avatarUrl: string;
 
   // Role & Status
-  @Column({ 
-    name: 'role', 
-    type: 'varchar', 
-    length: 20, 
+  @Column({
+    name: 'role',
+    type: 'varchar',
+    length: 20,
     nullable: false
   })
   role: Role;

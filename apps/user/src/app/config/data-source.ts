@@ -17,7 +17,7 @@ export const dataSourceOptions: DataSourceOptions = {
 
     entities: [User, DriverProfile],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
-    synchronize: false,
+    synchronize: true, // dev only
     logging: true,
 };
 

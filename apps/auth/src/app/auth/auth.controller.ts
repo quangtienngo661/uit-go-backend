@@ -1,42 +1,29 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { authPackage } from '@uit-go-backend/shared';
 
 @Controller('auth')
-export class AuthController {
+@authPackage.AuthServiceControllerMethods()
+export class AuthController implements authPackage.AuthServiceController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+  async login(request: authPackage.LoginRequest): Promise<authPackage.LoginResponse> {
+    return this.authService.login(request);
   }
 
-  @Get()
-  findAll() {
-    return this.authService.findAll();
+  async signUpUser(request: authPackage.SignUpUserRequest): Promise<authPackage.SignUpUserResponse> {
+    return this.authService.signUpUser(request);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
+  async signUpDriver(request: authPackage.SignUpDriverRequest): Promise<authPackage.SignUpDriverResponse> {
+    return this.authService.signUpDriver(request);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
+  async validateToken(request: authPackage.ValidateTokenRequest): Promise<authPackage.ValidateTokenResponse> {
+    return this.authService.validateToken(request);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+  async logout(request: authPackage.LogoutRequest): Promise<authPackage.LogoutResponse> {
+    return this.authService.logout(request);
   }
 }
