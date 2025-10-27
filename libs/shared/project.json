@@ -14,7 +14,7 @@
       "options": {
         "commands": [
           {
-            "command": "mkdir -p libs/shared/src/lib/gen"
+            "command": "node -e \"const fs = require('fs'); const path = require('path'); const dir = path.join('libs', 'shared', 'src', 'lib', 'gen'); if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });\""
           },
           {
             "command": "npx protoc --ts_proto_out=libs/shared/src/lib/gen --ts_proto_opt=nestJs=true --proto_path=libs/shared/src/lib/protos libs/shared/src/lib/protos/*.proto"

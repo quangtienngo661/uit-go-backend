@@ -14,8 +14,6 @@ export class UserService {
   ) {}
 
   async createPassenger(data: CreateUserDto) {
-    this.logger.log('Sending createPassenger request to User Service');
-    this.logger.debug('Data:', data);
 
     try {
       const result = await firstValueFrom(
@@ -23,7 +21,6 @@ export class UserService {
           timeout(5000) // 5 second timeout
         )
       );
-      this.logger.log('Received response from User Service');
       return result;
     } catch (error) {
       this.logger.error('Error calling User Service:', error.message);

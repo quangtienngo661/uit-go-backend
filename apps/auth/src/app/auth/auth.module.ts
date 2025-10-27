@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { SupabaseAdminModule } from '../../supabase/supabase-admin.module';
 
 @Module({
   imports: [
@@ -15,8 +16,10 @@ import { AuthController } from './auth.controller';
         },
       },
     ]),
+    SupabaseAdminModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],
+  exports: [AuthService],
 })
 export class AuthModule {}

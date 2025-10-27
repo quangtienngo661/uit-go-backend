@@ -10,6 +10,7 @@ service AuthService {
   rpc SignUpDriver (SignUpDriverRequest) returns (SignUpDriverResponse);
   rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse);
   rpc Logout (LogoutRequest) returns (LogoutResponse);
+  rpc CheckVerification(CheckVerificationRequest) returns (CheckVerificationResponse);
 }
 
 message LoginRequest {
@@ -62,9 +63,16 @@ message ValidateTokenResponse {
 }
 
 message LogoutRequest {
-  string token = 1;
 }
 
 message LogoutResponse {
   bool success = 1;
+}
+
+message CheckVerificationRequest {
+  string email = 1;
+}
+
+message CheckVerificationResponse {
+  bool isVerified = 1;
 }

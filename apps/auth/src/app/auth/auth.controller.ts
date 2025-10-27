@@ -2,7 +2,7 @@ import { Controller } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { authPackage } from '@uit-go-backend/shared';
 
-@Controller('auth')
+@Controller()
 @authPackage.AuthServiceControllerMethods()
 export class AuthController implements authPackage.AuthServiceController {
   constructor(private readonly authService: AuthService) {}
@@ -25,5 +25,9 @@ export class AuthController implements authPackage.AuthServiceController {
 
   async logout(request: authPackage.LogoutRequest): Promise<authPackage.LogoutResponse> {
     return this.authService.logout(request);
+  }
+
+  async checkVerification(request: authPackage.CheckVerificationRequest): Promise<authPackage.CheckVerificationResponse> {
+    return this.authService.checkVerification(request);
   }
 }

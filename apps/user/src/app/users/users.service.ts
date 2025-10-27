@@ -31,19 +31,22 @@ export class UsersService {
     return this.userRepository.find();
   }
 
-  async findOne(id: string): Promise<User> {
+  async findOne(id: string): Promise<User | null> {
     const user = await this.userRepository.findOne({
       where: { id },
       relations: ['driverProfile'],
     });
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      return null;
     }
     return user;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
     Object.assign(user, updateUserDto);
     return this.userRepository.save(user);
   }
@@ -83,13 +86,13 @@ export class UsersService {
     return this.driverProfileRepository.find({ relations: ['user'] });
   }
 
-  async findDriverProfile(id: string): Promise<DriverProfile> {
+  async findDriverProfile(id: string): Promise<DriverProfile | null> {
     const driverProfile = await this.driverProfileRepository.findOne({
       where: { id },
       relations: ['user'],
     });
     if (!driverProfile) {
-      throw new NotFoundException(`Driver profile with ID ${id} not found`);
+      return null;
     }
     return driverProfile;
   }
@@ -99,6 +102,9 @@ export class UsersService {
     updateDriverProfileDto: UpdateDriverProfileDto
   ): Promise<DriverProfile> {
     const driverProfile = await this.findDriverProfile(id);
+    if (!driverProfile) {
+      throw new NotFoundException(`Driver profile with ID ${id} not found`);
+    }
     Object.assign(driverProfile, updateDriverProfileDto);
     return this.driverProfileRepository.save(driverProfile);
   }
@@ -107,5 +113,68 @@ export class UsersService {
     const driverProfile = await this.findDriverProfile(id);
     await this.driverProfileRepository.softRemove(driverProfile);
   }
+
+  async findDriverByEmail(email: string): Promise<DriverProfile | null> {
+    const user = await this.userRepository.findOne({ where: { email, role: Role.DRIVER }, relations: ['driverProfile'] });
+    if (!user || !user.driverProfile) {
+      return null;
+    }
+    return user.driverProfile;
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    const user = await this.userRepository.findOne({
+      where: { email },
+      relations: ['driverProfile']
+    });
+    return user || null;
+  }
+
+  async findPassengerByEmail(email: string): Promise<User | null> {
+    const user = await this.userRepository.findOne({ where: { email, role: Role.PASSENGER } });
+    if (!user) {
+      return null;
+    }
+    return user;
+  }
+
+  async findDriverByPassengerId(passengerId: string): Promise<DriverProfile | null> {
+    const driverProfile = await this.driverProfileRepository.findOne({
+      where: { user: { id: passengerId } },
+      relations: ['user'],
+    });
+    if (!driverProfile) {
+      return null;
+    }
+    return driverProfile;
+  }
+
+  async markVerified(email: string): Promise<User | null> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (user) {
+      user.isVerified = true;
+      await this.userRepository.save(user);
+    }
+    return user;
+  }
+
+  // async createUserFromSupabase(payload: {createUserDto: CreateUserDto, supabaseId: string, email: string, isVerified: boolean}) {
+  //   const { createUserDto, supabaseId, email, isVerified } = payload;
+
+  //   // check if user already exists
+  //   const existingUser = await this.userRepository.findOne({ where: { email } });
+  //   if (existingUser) {
+  //     throw new ConflictException(`User with email ${email} already exists`);
+  //   }
+
+  //   const user = this.userRepository.create({
+  //     ...createUserDto,
+  //     id: supabaseId,
+  //     email,
+  //     isVerified,
+  //     ...(createUserDto.avatar_url !== undefined && { avatar_url: createUserDto.avatar_url }),
+  //   });
+  //   return this.userRepository.save(user);
+  // }
 }
 

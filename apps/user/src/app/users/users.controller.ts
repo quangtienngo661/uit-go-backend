@@ -1,4 +1,4 @@
-import { Controller, Logger } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -8,15 +8,12 @@ import { UpdateDriverProfileDto } from './dto/update-driver-profile.dto';
 
 @Controller()
 export class UsersController {
-  private readonly logger = new Logger(UsersController.name);
 
   constructor(private readonly usersService: UsersService) {}
 
   // passenger related
   @MessagePattern({ cmd: 'createPassenger' })
   createPassenger(@Payload() createUserDto: CreateUserDto) {
-    this.logger.log('Received createPassenger message');
-    this.logger.debug('Payload:', createUserDto);
     return this.usersService.create(createUserDto);
   }
 
@@ -77,4 +74,36 @@ export class UsersController {
   removeDriverProfile(@Payload() id: string) {
     return this.usersService.removeDriverProfile(id);
   }
+
+  @MessagePattern({ cmd: 'findDriverByEmail' })
+  findDriverByEmail(email: string) {
+    return this.usersService.findDriverByEmail(email);
+  }
+
+  @MessagePattern({ cmd: 'findPassengerByEmail' })
+  findPassengerByEmail(email: string) {
+    return this.usersService.findPassengerByEmail(email);
+  }
+
+  @MessagePattern({ cmd: 'findDriverByPassengerId'})
+  findDriverByPassengerId(passengerId: string) {
+    return this.usersService.findDriverByPassengerId(passengerId);
+  }
+
+  @MessagePattern({cmd: 'markVerified'})
+  markVerified(@Payload() email: string) {
+    return this.usersService.markVerified(email);
+  }
+
+  @MessagePattern({cmd: 'findUserByEmail'})
+  findUserByEmail(@Payload() email: string) {
+    return this.usersService.findByEmail(email);
+  }
+
+
+
+  // @MessagePattern({cmd: 'createUserFromSupabase'})
+  // createUserFromSupabase(@Payload() payload: {createUserDto: CreateUserDto, supabaseId: string, email: string, isVerified: boolean}) {
+  //   return this.usersService.createUserFromSupabase(payload);
+  // }
 }

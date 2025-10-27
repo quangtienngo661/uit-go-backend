@@ -5,6 +5,7 @@ import { authPackage, mapVehicleTypeToProto } from '@uit-go-backend/shared';
 import { LoginDto, RegisterUserDto, RegisterDriverDto } from './dto';
 import { firstValueFrom } from 'rxjs';
 import { SupabaseGuard } from '../../guards/auth/supabase.guard';
+import { CurrentUser } from '../../decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController implements OnModuleInit {
@@ -64,9 +65,18 @@ export class AuthController implements OnModuleInit {
 
   @Get('logout')
   @UseGuards(SupabaseGuard)
-  async logout(@Body('token') token: string) {
+  async logout() {
     const response = await firstValueFrom(
-      this.authServiceClient.logout({ token })
+      this.authServiceClient.logout({})
+    );
+    return response;
+  }
+
+  @Get('check-verification')
+  @UseGuards(SupabaseGuard)
+  async checkVerification(@CurrentUser() user: { id: string; email: string; role: string }) {
+    const response = await firstValueFrom(
+      this.authServiceClient.checkVerification({ email: user.email })
     );
     return response;
   }

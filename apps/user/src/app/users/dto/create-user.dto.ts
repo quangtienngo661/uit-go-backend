@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsString, IsStrongPassword } from "class-validator";
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsStrongPassword } from "class-validator";
 import { Role } from "@uit-go-backend/shared";
 
 export class CreateUserDto {
@@ -23,4 +23,8 @@ export class CreateUserDto {
     @IsString()
     @IsNotEmpty()
     phone: string;
+
+    @IsString()
+    @IsOptional()
+    avatar_url?: string;
 }

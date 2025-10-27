@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-import {authPackage} from '@uit-go-backend/shared';
+import { authPackage } from '@uit-go-backend/shared';
 
 @Module({
   imports: [
@@ -17,7 +17,7 @@ import {authPackage} from '@uit-go-backend/shared';
           protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/auth.proto')
         }
       }
-    ])
+    ]),
   ],
   controllers: [AuthController],
   providers: [AuthService],

@@ -60,11 +60,18 @@ export interface ValidateTokenResponse {
 }
 
 export interface LogoutRequest {
-  token: string;
 }
 
 export interface LogoutResponse {
   success: boolean;
+}
+
+export interface CheckVerificationRequest {
+  email: string;
+}
+
+export interface CheckVerificationResponse {
+  isVerified: boolean;
 }
 
 export const AUTH_PACKAGE_PACKAGE_NAME = "authPackage";
@@ -79,6 +86,8 @@ export interface AuthServiceClient {
   validateToken(request: ValidateTokenRequest): Observable<ValidateTokenResponse>;
 
   logout(request: LogoutRequest): Observable<LogoutResponse>;
+
+  checkVerification(request: CheckVerificationRequest): Observable<CheckVerificationResponse>;
 }
 
 export interface AuthServiceController {
@@ -97,11 +106,22 @@ export interface AuthServiceController {
   ): Promise<ValidateTokenResponse> | Observable<ValidateTokenResponse> | ValidateTokenResponse;
 
   logout(request: LogoutRequest): Promise<LogoutResponse> | Observable<LogoutResponse> | LogoutResponse;
+
+  checkVerification(
+    request: CheckVerificationRequest,
+  ): Promise<CheckVerificationResponse> | Observable<CheckVerificationResponse> | CheckVerificationResponse;
 }
 
 export function AuthServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["login", "signUpUser", "signUpDriver", "validateToken", "logout"];
+    const grpcMethods: string[] = [
+      "login",
+      "signUpUser",
+      "signUpDriver",
+      "validateToken",
+      "logout",
+      "checkVerification",
+    ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("AuthService", method)(constructor.prototype[method], method, descriptor);

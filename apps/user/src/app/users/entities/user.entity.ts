@@ -38,6 +38,9 @@ export class User {
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
 
+  @Column({ name: 'is_verified', type: 'boolean', default: false })
+  isVerified: boolean;
+
   // Timestamps
   @CreateDateColumn({ name: 'created_at', type: 'timestamp', nullable: false })
   createdAt: Date;
