@@ -3,19 +3,21 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
+import { authPackage } from '@uit-go-backend/shared';
 
 @Module({
   imports: [
     ClientsModule.register([
       {
-        name: 'AUTH_SERVICE',
-        transport: Transport.TCP,
+        name: authPackage.AUTH_SERVICE_NAME,
+        transport: Transport.GRPC,
         options: {
-          host: '0.0.0.0',
-          port: 3001
+          package: authPackage.AUTH_PACKAGE_PACKAGE_NAME,
+          url: 'auth-service:3001',
+          protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/auth.proto')
         }
       }
-    ])
+    ]),
   ],
   controllers: [AuthController],
   providers: [AuthService],

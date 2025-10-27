@@ -113,9 +113,13 @@ COPY --from=prod-deps /repo/node_modules ./node_modules
 ARG APP_NAME
 COPY --from=builder   /repo/dist/apps/${APP_NAME} ./dist
 
+# Copy proto files for gRPC (needed at runtime)
+COPY --from=builder /repo/libs/shared/src/lib/protos ./libs/shared/src/lib/protos
+
 # expose whatever your app listens on (env-driven in main.ts is best)
 EXPOSE 3000
 
 # start the built Nest app
 CMD ["node", "dist/main.js"]
+
 

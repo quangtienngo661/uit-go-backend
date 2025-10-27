@@ -17,7 +17,7 @@ export const userDbAsyncConfig: TypeOrmModuleAsyncOptions = {
         database: configService.get('USERDB_DATABASE'),
         entities: [User, DriverProfile],
 
-        synchronize: false,
+        synchronize: true, // AUTO-CREATE TABLES IN DEV
         migrations: [__dirname + '/../migrations/*{.ts, .js}'],
         migrationsRun: false, // Don't auto run (use CLI instead)
         logging: true,

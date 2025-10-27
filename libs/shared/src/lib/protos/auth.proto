@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package authPackage;
+
+import "common.proto";
+
+service AuthService {
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc SignUpUser (SignUpUserRequest) returns (SignUpUserResponse);
+  rpc SignUpDriver (SignUpDriverRequest) returns (SignUpDriverResponse);
+  rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc Logout (LogoutRequest) returns (LogoutResponse);
+  rpc CheckVerification(CheckVerificationRequest) returns (CheckVerificationResponse);
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+}
+
+message SignUpUserRequest {
+  string email = 1;
+  string password = 2;
+  string fullName = 3;
+  string phone = 4;
+}
+
+message SignUpUserResponse {
+  string userId = 1;
+}
+
+message SignUpDriverRequest {
+  string email = 1;
+  string password = 2;
+  string fullName = 3;
+  string phone = 4;
+  string licenseNumber = 5;
+
+  common.VehicleType vehicleType = 6;
+  string licensePlate = 7;
+  string vehicleModel = 8;
+  string vehicleColor = 9;
+}
+
+message SignUpDriverResponse {
+  string userId = 1;
+  string driverId = 2;
+}
+
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  string userId = 2;
+  string email = 3;
+  common.Role role = 4;
+}
+
+message LogoutRequest {
+}
+
+message LogoutResponse {
+  bool success = 1;
+}
+
+message CheckVerificationRequest {
+  string email = 1;
+}
+
+message CheckVerificationResponse {
+  bool isVerified = 1;
+}

@@ -14,11 +14,11 @@ export const dataSourceOptions: DataSourceOptions = {
     username: process.env.TRIPDB_USERNAME,
     password: process.env.TRIPDB_PASSWORD,
     database: process.env.TRIPDB_DATABASE,
-    entities: [Trip, Rating], 
-    synchronize: false, 
-    migrations: [__dirname + '/../migrations/*{.ts, .js}'], 
+    entities: [Trip, Rating],
+    synchronize: true, // dev only
+    migrations: [__dirname + '/../migrations/*{.ts, .js}'],
     logging: true
 }
 
-const dataSource = new DataSource(dataSourceOptions); 
+const dataSource = new DataSource(dataSourceOptions);
 export default dataSource;
