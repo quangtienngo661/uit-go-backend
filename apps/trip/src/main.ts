@@ -8,6 +8,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
+import { tripPackage } from '@uit-go-backend/shared';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
@@ -16,7 +17,7 @@ async function bootstrap() {
       transport: Transport.GRPC,
       options: {
         url: '0.0.0.0:3003',
-        package: 'tripPackage',
+        package: tripPackage.TRIP_PACKAGE_PACKAGE_NAME,
         protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/trip.proto')
       }
     }

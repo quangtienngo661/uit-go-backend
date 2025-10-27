@@ -14,7 +14,7 @@ export const dataSourceOptions: DataSourceOptions = {
     password: process.env.DRIVERDB_PASSWORD,
     database: process.env.DRIVERDB_DATABASE,
     entities: [Driver],
-    synchronize: false,
+    synchronize: true, // development only
     migrations: [__dirname + '/../../migrations/*{.ts,.js}'],
     logging: true
 }

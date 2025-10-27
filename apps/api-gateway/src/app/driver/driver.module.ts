@@ -11,7 +11,7 @@ import { join } from 'path';
         name: 'DRIVER_SERVICE',
         transport: Transport.GRPC,
         options: {
-          url: '0.0.0.0:3004',
+          url: 'driver-service:3004',
           package: 'driverPackage',
           protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/driver.proto')
         }

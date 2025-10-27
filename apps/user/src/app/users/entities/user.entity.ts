@@ -13,7 +13,7 @@ export class User {
   @Column({ name: 'email', type: 'varchar', length: 255, unique: true, nullable: false })
   email: string;
 
-  @Column({ name: 'password_hash', type: 'varchar', length: 255, nullable: false, select: false })
+  @Column({ name: 'password_hash', type: 'varchar', length: 255, nullable: true, select: false })
   passwordHash: string;
 
   // Profile
@@ -27,16 +27,19 @@ export class User {
   avatarUrl: string;
 
   // Role & Status
-  @Column({ 
-    name: 'role', 
-    type: 'varchar', 
-    length: 20, 
+  @Column({
+    name: 'role',
+    type: 'varchar',
+    length: 20,
     nullable: false
   })
   role: Role;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
+
+  @Column({ name: 'is_verified', type: 'boolean', default: false })
+  isVerified: boolean;
 
   // Timestamps
   @CreateDateColumn({ name: 'created_at', type: 'timestamp', nullable: false })

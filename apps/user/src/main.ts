@@ -6,15 +6,21 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
+import { Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  const globalPrefix = 'api';
-  app.setGlobalPrefix(globalPrefix);
-  const port = process.env.USER_SERVICE_PORT || 3002;
-  await app.listen(port);
+  const userServicePort = process.env.PORT || process.env.USER_SERVICE_PORT || 3002;
+
+  const app = await NestFactory.createMicroservice(AppModule, {
+    transport: Transport.TCP,
+    options: {
+      host: '0.0.0.0',
+      port: userServicePort
+    }
+  });
+  await app.listen();
   Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`
+    `🚀 Application is running on TCP port ${userServicePort}`
   );
 }
 
