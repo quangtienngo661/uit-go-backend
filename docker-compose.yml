@@ -1,0 +1,171 @@
+services:
+  user-db:
+    image: postgres:17
+    container_name: user-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${USERDB_USERNAME}
+      POSTGRES_PASSWORD: ${USERDB_PASSWORD}
+      POSTGRES_DB: ${USERDB_DATABASE}
+    ports:
+      - 5433:5432
+    volumes:
+      - userdb_data:/var/lib/postgresql/data
+
+  trip-db:
+    image: postgres:17
+    container_name: trip-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${TRIPDB_USERNAME}
+      POSTGRES_PASSWORD: ${TRIPDB_PASSWORD}
+      POSTGRES_DB: ${TRIPDB_DATABASE}
+    ports:
+      - 5434:5432
+    volumes:
+      - tripdb_data:/var/lib/postgresql/data
+
+  driver-db:
+    image: postgres:17
+    container_name: driver-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DRIVERDB_USERNAME}
+      POSTGRES_PASSWORD: ${DRIVERDB_PASSWORD}
+      POSTGRES_DB: ${DRIVERDB_DATABASE}
+    ports:
+      - 5435:5432
+    volumes:
+      - driverdb_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: driver-redis
+    expose: ["6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    container_name: kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://:9092
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    ports:
+      - 9092:9092
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "exec 3<>/dev/tcp/127.0.0.1/9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+    ports:
+      - "${GATEWAY_SERVICE_PORT}:${GATEWAY_SERVICE_PORT}"
+    environment:
+      PORT: ${GATEWAY_SERVICE_PORT}
+      USER_SERVICE_HOST: user-service
+      USER_SERVICE_PORT: ${USER_SERVICE_PORT}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+    depends_on:
+      - auth-service
+      - user-service
+      - trip-service
+      - driver-service
+      - notification-service
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: apps/auth/Dockerfile
+    container_name: auth-service
+    restart: unless-stopped
+    environment:
+      PORT: ${AUTH_SERVICE_PORT}
+      USER_SERVICE_HOST: user-service
+      USER_SERVICE_PORT: ${USER_SERVICE_PORT}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+    expose: ["${AUTH_SERVICE_PORT}"]
+    depends_on:
+      - user-service
+
+  user-service:
+    build:
+      context: .
+      dockerfile: apps/user/Dockerfile
+    environment:
+      USERDB_HOST: user-db
+      USERDB_PORT: 5432
+      USERDB_USERNAME: ${USERDB_USERNAME}
+      USERDB_PASSWORD: ${USERDB_PASSWORD}
+      USERDB_DATABASE: ${USERDB_DATABASE}
+      PORT: ${USER_SERVICE_PORT}
+    expose: ["${USER_SERVICE_PORT}"]
+    depends_on: [user-db]
+
+  trip-service:
+    build:
+      context: .
+      dockerfile: apps/trip/Dockerfile
+    environment:
+      TRIPDB_HOST: trip-db
+      TRIPDB_PORT: 5432
+      TRIPDB_USERNAME: ${TRIPDB_USERNAME}
+      TRIPDB_PASSWORD: ${TRIPDB_PASSWORD}
+      TRIPDB_DATABASE: ${TRIPDB_DATABASE}
+      PORT: ${TRIP_SERVICE_PORT}
+    expose: ["${TRIP_SERVICE_PORT}"]
+    depends_on: [trip-db]
+
+  driver-service:
+    build:
+      context: .
+      dockerfile: apps/driver/Dockerfile
+    environment:
+      DRIVERDB_HOST: driver-db
+      DRIVERDB_PORT: 5432
+      DRIVERDB_USERNAME: ${DRIVERDB_USERNAME}
+      DRIVERDB_PASSWORD: ${DRIVERDB_PASSWORD}
+      DRIVERDB_DATABASE: ${DRIVERDB_DATABASE}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PORT: ${DRIVER_SERVICE_PORT}
+    expose: ["${DRIVER_SERVICE_PORT}"]
+    depends_on: [redis]
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: apps/notification/Dockerfile
+    environment:
+      PORT: ${NOTIFICATION_SERVICE_PORT}
+      KAFKA_BROKER: kafka:9092
+    expose: ["${NOTIFICATION_SERVICE_PORT}"]
+    depends_on: [kafka]
+
+volumes:
+  userdb_data:
+  tripdb_data:
+  driverdb_data:
+  notification_data:

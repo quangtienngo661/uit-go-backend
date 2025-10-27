@@ -1,0 +1,43 @@
+{
+  "name": "shared",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project shared --web",
+  "targets": {
+    "generate-proto": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": ["{projectRoot}/src/lib/protos/*.proto"],
+      "outputs": ["{projectRoot}/src/lib/gen"],
+      "options": {
+        "commands": [
+          {
+            "command": "node -e \"const fs = require('fs'); const path = require('path'); const dir = path.join('libs', 'shared', 'src', 'lib', 'gen'); if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });\""
+          },
+          {
+            "command": "npx protoc --ts_proto_out=libs/shared/src/lib/gen --ts_proto_opt=nestJs=true --proto_path=libs/shared/src/lib/protos libs/shared/src/lib/protos/*.proto"
+          }
+        ],
+        "parallel": false
+      }
+    },
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "inputs": [
+        "production",
+        "^production",
+        "{projectRoot}/src/lib/gen/**/*"
+      ],
+      "options": {
+        "outputPath": "dist/libs/shared",
+        "main": "libs/shared/src/index.ts",
+        "tsConfig": "libs/shared/tsconfig.lib.json",
+        "assets": ["libs/shared/src/lib/protos/*.proto"]
+      },
+      "dependsOn": ["generate-proto"]
+    }
+  }
+}

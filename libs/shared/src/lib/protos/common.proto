@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package common;
+
+// Vehicle Types
+enum VehicleType {
+  VEHICLE_TYPE_UNSPECIFIED = 0;  // Required default value in proto3
+  VEHICLE_TYPE_BIKE = 1;
+  VEHICLE_TYPE_SEDAN = 2;
+  VEHICLE_TYPE_SUV = 3;
+  VEHICLE_TYPE_SEVEN_SEAT = 4;
+}
+
+// Verification Status
+enum VerificationStatus {
+  VERIFICATION_STATUS_UNSPECIFIED = 0;
+  VERIFICATION_STATUS_PENDING = 1;
+  VERIFICATION_STATUS_APPROVED = 2;
+  VERIFICATION_STATUS_REJECTED = 3;
+}
+
+// User Roles
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_PASSENGER = 1;
+  ROLE_DRIVER = 2;
+}
+
+// Trip Status
+enum TripStatus {
+  TRIP_STATUS_UNSPECIFIED = 0;
+  TRIP_STATUS_SEARCHING = 1;
+  TRIP_STATUS_ACCEPTED = 2;
+  TRIP_STATUS_IN_PROGRESS = 3;
+  TRIP_STATUS_COMPLETED = 4;
+  TRIP_STATUS_CANCELLED = 5;
+}
+
+// Driver Status
+enum DriverStatus {
+  DRIVER_STATUS_UNSPECIFIED = 0;
+  DRIVER_STATUS_OFFLINE = 1;
+  DRIVER_STATUS_ONLINE = 2;
+  DRIVER_STATUS_BUSY = 3;
+}
