@@ -48,30 +48,43 @@ services:
       timeout: 3s
       retries: 20
 
-  zookeeper:
-    image: wurstmeister/zookeeper:latest
-    ports:
-      - "2181:2181"
+  # zookeeper:
+  #   image: wurstmeister/zookeeper:latest
+  #   ports:
+  #     - "2181:2181"
 
-  kafka:
-    image: wurstmeister/kafka:latest
-    container_name: kafka
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENERS: PLAINTEXT://:9092
-      KAFKA_ADVERTISED_HOST_NAME: kafka
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      ALLOW_PLAINTEXT_LISTENER: "yes"
+  # kafka:
+  #   image: wurstmeister/kafka:latest
+  #   container_name: kafka
+  #   environment:
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  #     KAFKA_LISTENERS: PLAINTEXT://:9092
+  #     KAFKA_ADVERTISED_HOST_NAME: kafka
+  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+  #     ALLOW_PLAINTEXT_LISTENER: "yes"
+  #   ports:
+  #     - 9092:9092
+  #   depends_on:
+  #     - zookeeper
+  #   healthcheck:
+  #     test: ["CMD", "bash", "-lc", "exec 3<>/dev/tcp/127.0.0.1/9092"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 30
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
     ports:
-      - 9092:9092
-    depends_on:
-      - zookeeper
-    healthcheck:
-      test: ["CMD", "bash", "-lc", "exec 3<>/dev/tcp/127.0.0.1/9092"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_logs:/var/log/rabbitmq
 
   api-gateway:
     build:
@@ -162,10 +175,12 @@ services:
       PORT: ${NOTIFICATION_SERVICE_PORT}
       KAFKA_BROKER: kafka:9092
     expose: ["${NOTIFICATION_SERVICE_PORT}"]
-    depends_on: [kafka]
+    depends_on: [rabbitmq]
 
 volumes:
   userdb_data:
   tripdb_data:
   driverdb_data:
   notification_data:
+  rabbitmq_data:
+  rabbitmq_logs:
