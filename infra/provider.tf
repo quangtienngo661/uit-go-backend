@@ -7,6 +7,7 @@ terraform {
   }
 }
 
+
 provider "aws" { region = var.region }
 
 # RabbitMQ Management API (private inside VPC)
