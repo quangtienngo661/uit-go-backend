@@ -3,7 +3,6 @@
  * This is only a minimal backend to get started.
  */
 
-import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -15,9 +14,9 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [process.env.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq:5672'],
-      queue: 'notification_queue',
+      queue: 'notif.q',
       queueOptions: {
-        durable: false,
+        durable: true,
       },
     },
   });
