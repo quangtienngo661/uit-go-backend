@@ -1,35 +1,40 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as admin from 'firebase-admin';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
+  private transporter: nodemailer.Transporter;
 
   constructor() {
-    if (!admin.apps.length) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        }),
-      });
-    }
+    this.transporter = nodemailer.createTransport({
+      host: process.env.MAIL_HOST,
+      port: Number(process.env.MAIL_PORT),
+      secure: false,
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
+    });
   }
 
   async sendPushNotification(token: string, title: string, body: string) {
-    try {
-      await admin.messaging().send({
-        token,
-        notification: { title, body },
-      });
-      this.logger.log(`✅ Push notification sent to ${token}`);
-    } catch (error) {
-      this.logger.error('❌ Failed to send push notification', error);
-    }
+    this.logger.log(`📱 Simulating push notification: ${title} - ${body}`);
   }
 
   async sendEmailNotification(email: string, subject: string, message: string) {
-    this.logger.log(`📧 Email to ${email}: ${subject} - ${message}`);
+    try {
+      const mailOptions = {
+        from: `"UIT-Go Notifications" <${process.env.MAIL_USER}>`,
+        to: email,
+        subject,
+        text: message,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      this.logger.log(`✅ Email sent successfully to ${email}`);
+    } catch (error) {
+      this.logger.error(`❌ Failed to send email to ${email}`, error);
+    }
   }
 }

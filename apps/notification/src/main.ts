@@ -25,7 +25,7 @@ async function bootstrap() {
   await app.startAllMicroservices();
   await app.listen(process.env.PORT || 3005);
   console.log(
-    '🚀 Notification service is running on port',
+    'Notification service is running on port',
     process.env.PORT || 3005,
   );
 }
