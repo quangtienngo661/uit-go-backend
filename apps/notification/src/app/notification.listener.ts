@@ -17,14 +17,39 @@ export class NotificationListener {
   async handleTripCreated(@Payload() data: any, @Ctx() context: RmqContext) {
     this.logger.log(`📩 Received trip.created: ${JSON.stringify(data)}`);
 
-    await this.notificationService.sendPushNotification(
-      data.driverToken,
-      'Chuyến đi mới!',
-      `${data.userName} vừa đặt xe.`,
+    await this.notificationService.sendEmailNotification(
+      data.userEmail,
+      'Xác nhận đặt chuyến thành công',
+      'Bạn đã đặt chuyến đi thành công. Cảm ơn bạn đã sử dụng UIT-Go!',
     );
 
-    const channel = context.getChannelRef();
-    channel.ack(context.getMessage());
+    await this.notificationService.sendEmailNotification(
+      data.driverEmail,
+      'Có chuyến đi mới!',
+      'Một hành khách vừa đặt chuyến. Hãy kiểm tra ứng dụng để nhận chuyến.',
+    );
+  }
+
+  @MessagePattern('driver.accepted')
+  async handleDriverAccepted(@Payload() data: any, @Ctx() context: RmqContext) {
+    this.logger.log(`📩 Received driver.accepted: ${JSON.stringify(data)}`);
+
+    await this.notificationService.sendEmailNotification(
+      data.userEmail,
+      'Tài xế đã nhận chuyến',
+      'Tài xế của bạn đã nhận chuyến và đang trên đường đến đón bạn.',
+    );
+  }
+
+  @MessagePattern('trip.started')
+  async handleTripStarted(@Payload() data: any, @Ctx() context: RmqContext) {
+    this.logger.log(`📩 Received trip.started: ${JSON.stringify(data)}`);
+
+    await this.notificationService.sendEmailNotification(
+      data.userEmail,
+      'Chuyến đi của bạn đã bắt đầu',
+      'Tài xế đã bắt đầu chuyến đi. Chúc bạn có một hành trình an toàn!',
+    );
   }
 
   @MessagePattern('trip.completed')
@@ -34,10 +59,18 @@ export class NotificationListener {
     await this.notificationService.sendEmailNotification(
       data.userEmail,
       'Chuyến đi đã hoàn tất',
-      'Cảm ơn bạn đã sử dụng UIT-Go!',
+      'Cảm ơn bạn đã đồng hành cùng UIT-Go! Hãy đánh giá tài xế của bạn nhé.',
     );
+  }
 
-    const channel = context.getChannelRef();
-    channel.ack(context.getMessage());
+  @MessagePattern('trip.cancelled')
+  async handleTripCancelled(@Payload() data: any, @Ctx() context: RmqContext) {
+    this.logger.log(`📩 Received trip.cancelled: ${JSON.stringify(data)}`);
+
+    await this.notificationService.sendEmailNotification(
+      data.driverEmail,
+      'Chuyến đi đã bị hủy',
+      'Hành khách đã hủy chuyến đi. Bạn có thể chờ chuyến mới.',
+    );
   }
 }
