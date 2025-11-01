@@ -6,18 +6,22 @@ import { ConfigModule } from '@nestjs/config';
 import { configuration, driverConfigValidation } from './config/configuration';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { driverDbAsyncConfig } from './config/ormConfig';
+import { LocationsModule } from './locations/locations.module';
+import { RedisModule } from '@uit-go-backend/shared';
 
 @Module({
-   imports: [
-    DriversModule, 
+  imports: [
+    DriversModule,
     ConfigModule.forRoot({
-      envFilePath: '../../../.env', 
-      load: [configuration], 
-      isGlobal: true, 
-      validationSchema: driverConfigValidation, 
-      cache: true
-    }), 
-    TypeOrmModule.forRootAsync(driverDbAsyncConfig)
+      envFilePath: '../../../.env',
+      load: [configuration],
+      isGlobal: true,
+      validationSchema: driverConfigValidation,
+      cache: true,
+    }),
+    TypeOrmModule.forRootAsync(driverDbAsyncConfig),
+    LocationsModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

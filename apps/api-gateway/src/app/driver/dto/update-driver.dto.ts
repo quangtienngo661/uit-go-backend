@@ -1,12 +1,12 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateDriverDto } from './create-driver.dto';
 import { IsEnum, IsLatitude, IsLongitude, IsNumber, IsOptional, IsUUID } from 'class-validator';
-import { DriverStatus } from '@uit-go-backend/shared';
+import { commonPackage, DriverStatus } from '@uit-go-backend/shared';
 
 export class UpdateDriverDto extends PartialType(CreateDriverDto) {
-  @IsEnum(DriverStatus)
+  @IsEnum(commonPackage.DriverStatus)
   @IsOptional()
-  status?: DriverStatus;
+  status?: commonPackage.DriverStatus;
 
   @IsNumber()
   @IsOptional()

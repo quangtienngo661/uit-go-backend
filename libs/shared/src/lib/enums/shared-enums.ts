@@ -25,7 +25,9 @@ export enum TripStatus {
 }
 
 export enum DriverStatus {
+    UNSPECIFIED = 'unspecified', 
+    UNRECOGNIZED = 'unrecognized',
     OFFLINE = 'offline',
     ONLINE = 'online',
-    BUSY = 'busy'
+    BUSY = 'busy', 
 }
