@@ -20,7 +20,10 @@ export class UsersService {
 
   // passenger related
   async create(createUserDto: CreateUserDto): Promise<User> {
-    createUserDto.role = Role.PASSENGER;
+    // Set default role to PASSENGER if not provided
+    if (!createUserDto.role) {
+      createUserDto.role = Role.PASSENGER;
+    }
     const user = this.userRepository.create({
       ...createUserDto,
     });
@@ -86,10 +89,10 @@ export class UsersService {
     return this.driverProfileRepository.find({ relations: ['user'] });
   }
 
-  async findDriverProfile(id: string): Promise<DriverProfile | null> {
-    const driverProfile = await this.driverProfileRepository.findOne({
+  async findDriverProfile(id: string): Promise<User | null> {
+    const driverProfile = await this.userRepository.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ['driverProfile'],
     });
     if (!driverProfile) {
       return null;
@@ -147,6 +150,21 @@ export class UsersService {
       return null;
     }
     return driverProfile;
+  }
+
+  async updateDriverProfileByUserId(
+    userId: string,
+    updateDriverProfileDto: UpdateDriverProfileDto
+  ): Promise<DriverProfile> {
+    const driverProfile = await this.driverProfileRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ['user'],
+    });
+    if (!driverProfile) {
+      throw new NotFoundException(`Driver profile for user ID ${userId} not found`);
+    }
+    Object.assign(driverProfile, updateDriverProfileDto);
+    return this.driverProfileRepository.save(driverProfile);
   }
 
   async markVerified(email: string): Promise<User | null> {

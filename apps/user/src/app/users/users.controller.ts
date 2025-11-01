@@ -17,6 +17,11 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
+  @MessagePattern({ cmd: 'createUser' })
+  createUser(@Payload() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
+  }
+
   @MessagePattern({ cmd: 'findAllPassengers' })
   findAllPassengers() {
     return this.usersService.findAll();
@@ -88,6 +93,13 @@ export class UsersController {
   @MessagePattern({ cmd: 'findDriverByPassengerId'})
   findDriverByPassengerId(passengerId: string) {
     return this.usersService.findDriverByPassengerId(passengerId);
+  }
+
+  @MessagePattern({ cmd: 'updateDriverProfileByUserId' })
+  updateDriverProfileByUserId(
+    @Payload() payload: { userId: string; data: UpdateDriverProfileDto }
+  ) {
+    return this.usersService.updateDriverProfileByUserId(payload.userId, payload.data);
   }
 
   @MessagePattern({cmd: 'markVerified'})

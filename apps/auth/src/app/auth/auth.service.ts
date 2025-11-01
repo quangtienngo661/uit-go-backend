@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { authPackage, Role } from '@uit-go-backend/shared';
+import { authPackage, Role, vehicleTypeToDB } from '@uit-go-backend/shared';
 import { firstValueFrom } from 'rxjs';
 import { SUPABASE_ADMIN } from '../../supabase/supabase-admin.provider';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -97,12 +97,23 @@ export class AuthService {
 
     const userId = data.user.id;
 
-    const driver = await firstValueFrom(this.userClient.send({ cmd: 'createDriverProfile' }, {
-      user_id: userId,
+    // create the User record with DRIVER role
+    await firstValueFrom(this.userClient.send({ cmd: 'createUser' }, {
+      id: userId,
       email: request.email,
       fullName: request.fullName,
       phone: request.phone,
-      role: Role.DRIVER
+      role: Role.DRIVER,
+      password: '' // Not used, Supabase manages auth
+    }));
+
+    // create the DriverProfile
+    const driver = await firstValueFrom(this.userClient.send({ cmd: 'createDriverProfile' }, {
+      userId: userId,
+      vehicleType: vehicleTypeToDB(request.vehicleType),
+      licensePlate: request.licensePlate,
+      vehicleModel: request.vehicleModel,
+      vehicleColor: request.vehicleColor
     }));
 
     return { driverId: driver.id, userId: userId };

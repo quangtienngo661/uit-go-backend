@@ -1,8 +1,10 @@
-import { 
-  commonPackage, 
-  DriverStatus, 
-} from "@uit-go-backend/shared";
-import { VehicleType as SharedVehicleType, Role as SharedRole, TripStatus as SharedTripStatus } from '@uit-go-backend/shared';
+import {
+  commonPackage,
+  DriverStatus,
+  VehicleType as SharedVehicleType,
+  Role as SharedRole,
+  TripStatus as SharedTripStatus
+} from "../../index";
 
 export const protoToEntityDriverStatus = (protoStatus: commonPackage.DriverStatus) => {
     switch (protoStatus) {
@@ -43,7 +45,7 @@ export function vehicleTypeToDB(value: commonPackage.VehicleType): SharedVehicle
     case commonPackage.VehicleType.VEHICLE_TYPE_SEDAN: return SharedVehicleType.SEDAN;
     case commonPackage.VehicleType.VEHICLE_TYPE_SUV: return SharedVehicleType.SUV;
     case commonPackage.VehicleType.VEHICLE_TYPE_SEVEN_SEAT: return SharedVehicleType.SEVEN_SEAT;
-    default: return SharedVehicleType.BIKE; // 
+    default: return SharedVehicleType.BIKE; //
   }
 }
 
