@@ -410,7 +410,14 @@ locals {
     "notification-service" = [
       { name = "PORT", value = tostring(local.service_cfg["notification-service"].port) },
       { name = "RABBITMQ_ENDPOINT", value = aws_mq_broker.rabbit.instances[0].endpoints[0] },
-      { name = "RABBITMQ_USER", value = "mqadmin" }
+      { name = "RABBITMQ_USER", value = "mqadmin" },
+      { name = "MAIL_HOST", value = var.mail_host },
+      { name = "MAIL_PORT", value = tostring(var.mail_port) },
+      { name = "MAIL_USER", value = var.mail_user },
+      { name = "MAIL_PASS", value = var.mail_pass },
+      { name = "FIREBASE_PROJECT_ID", value = var.firebase_project_id },
+      { name = "FIREBASE_CLIENT_EMAIL", value = var.firebase_client_email },
+      { name = "FIREBASE_PRIVATE_KEY", value = var.firebase_private_key }
     ]
   }
 }

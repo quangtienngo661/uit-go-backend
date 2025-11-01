@@ -104,3 +104,49 @@ variable "sns_topic_arn" {
   default = ""
   description = "SNS topic ARN for CloudWatch alarms"
   }
+
+# Firebase (for notification-service push notifications)
+variable "firebase_project_id" {
+  type = string
+  default = ""
+  description = "Firebase project ID for push notifications"
+  }
+
+variable "firebase_client_email" {
+  type = string
+  default = ""
+  description = "Firebase service account email"
+  }
+
+variable "firebase_private_key" {
+  type = string
+  default = ""
+  sensitive = true
+  description = "Firebase service account private key"
+  }
+
+# Email (for notification-service email notifications)
+variable "mail_host" {
+  type = string
+  default = "smtp.gmail.com"
+  description = "SMTP mail server host"
+  }
+
+variable "mail_port" {
+  type = number
+  default = 587
+  description = "SMTP mail server port"
+  }
+
+variable "mail_user" {
+  type = string
+  default = ""
+  description = "SMTP authentication username"
+  }
+
+variable "mail_pass" {
+  type = string
+  default = ""
+  sensitive = true
+  description = "SMTP authentication password"
+  }
