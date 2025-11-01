@@ -601,7 +601,7 @@ Comprehensive documentation is available in the `apps/docs/` directory:
 
 **Course:** SE360 - Cloud-Native System Architecture  
 **University:** University of Information Technology (UIT)  
-**Class:** SE100.Q11  
+**Class:** SE360.Q11  
 **Semester:** 1st Semester, 2025-2026
 
 | Name | Student ID | Responsibilities |
