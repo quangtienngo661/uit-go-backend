@@ -94,6 +94,6 @@ export class UserController {
     if(user?.role === Role.PASSENGER){
       return this.userService.updatePassenger(user.id, body);
     }
-    return this.userService.updateDriverProfile(user.id, body);
+    return this.userService.updateDriverProfileByUserId(user.id, body);
   }
 }
