@@ -170,34 +170,54 @@ TRIP_SERVICE_PORT=3003
 DRIVER_SERVICE_PORT=3004
 NOTIFICATION_SERVICE_PORT=3005
 
-# === Supabase Configuration ===
+# === Supabase Configuration (Authentication) ===
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your-anon-key
 SUPABASE_JWT_SECRET=your-jwt-secret
 
 # === Database Configuration ===
+# User Service Database
+USERDB_HOST=localhost
+USERDB_PORT=5433
 USERDB_USERNAME=userdb_admin
 USERDB_PASSWORD=userdb_password
 USERDB_DATABASE=userdb
 
+# Trip Service Database
+TRIPDB_HOST=localhost
+TRIPDB_PORT=5434
 TRIPDB_USERNAME=tripdb_admin
 TRIPDB_PASSWORD=tripdb_password
 TRIPDB_DATABASE=tripdb
 
+# Driver Service Database
+DRIVERDB_HOST=localhost
+DRIVERDB_PORT=5435
 DRIVERDB_USERNAME=driverdb_admin
 DRIVERDB_PASSWORD=driverdb_password
 DRIVERDB_DATABASE=driverdb
 
-# === RabbitMQ Configuration ===
+# === Redis Configuration (Driver Location) ===
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# === RabbitMQ Configuration (Event Bus) ===
 RABBITMQ_DEFAULT_USER=admin
 RABBITMQ_DEFAULT_PASS=admin123
 
-# === Email Configuration (for Notifications) ===
+# === Firebase Configuration (Push Notifications) ===
+FIREBASE_PROJECT_ID=your-firebase-project-id
+FIREBASE_CLIENT_EMAIL=your-firebase-client-email@project.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour-Private-Key-Here\n-----END PRIVATE KEY-----\n"
+
+# === Nodemailer Configuration (Email Notifications) ===
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USER=your-email@gmail.com
 MAIL_PASS=your-app-password
 ```
+
+> **Note:** Auth service no longer requires a separate database. It uses **Supabase BaaS** for authentication, eliminating `AUTHDB_*` and `JWT_*` variables. See [ADR-004](./apps/docs/ADR/ADR-004-supabase-authentication.md) for details.
 
 ### 4. Setup Supabase
 
