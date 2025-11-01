@@ -3,7 +3,7 @@
 **Project:** UIT-Go - Cloud-Native Ride-Sharing Platform Backend  
 **Course:** SE360 - Cloud-Native System Architecture  
 **Institution:** University of Information Technology (UIT)  
-**Class:** SE100.Q11  
+**Class:** SE360.Q11  
 **Semester:** 1st Semester, 2025-2026  
 **Module Focus:** Module E - Automation & Cost Optimization (FinOps)
 

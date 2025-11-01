@@ -6,6 +6,8 @@ import { LoginDto, RegisterUserDto, RegisterDriverDto } from './dto';
 import { firstValueFrom } from 'rxjs';
 import { SupabaseGuard } from '../../guards/auth/supabase.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
+import { RolesGuard } from '../../guards/auth/roles.guard';
+import { Roles } from '../../decorators/roles.decorator';
 
 @Controller('auth')
 export class AuthController implements OnModuleInit {
@@ -79,5 +81,13 @@ export class AuthController implements OnModuleInit {
       this.authServiceClient.checkVerification({ email: user.email })
     );
     return response;
+  }
+
+  // for demo
+  @Get('only-driver')
+  @UseGuards(SupabaseGuard, RolesGuard)
+  @Roles('driver')
+  async onlyDriver(){
+    return {message: "If you see this message, you are authenticated as a driver!"};
   }
 }
