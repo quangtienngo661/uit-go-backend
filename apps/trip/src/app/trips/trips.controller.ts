@@ -1,35 +1,46 @@
-import { Controller } from '@nestjs/common';
+import { Controller, OnModuleInit } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { TripsService } from './trips.service';
-import { CreateTripDto } from './dto/create-trip.dto';
-import { UpdateTripDto } from './dto/update-trip.dto';
+import { tripPackage } from '@uit-go-backend/shared';
 
 @Controller()
-export class TripsController {
-  constructor(private readonly tripsService: TripsService) {}
+@tripPackage.TripServiceControllerMethods()
+export class TripsController implements tripPackage.TripServiceController {
+  constructor(private readonly tripsService: TripsService) { }
 
-  @MessagePattern('createTrip')
-  create(@Payload() createTripDto: CreateTripDto) {
-    return this.tripsService.create(createTripDto);
+  async createTrip(request: tripPackage.CreateTripRequest): Promise<tripPackage.CreateTripResponse> {
+    return await this.tripsService.createTrip(request);
   }
 
-  @MessagePattern('findAllTrips')
-  findAll() {
-    return this.tripsService.findAll();
+  async getTrip(request: tripPackage.GetTripRequest): Promise<tripPackage.GetTripResponse> {
+    return await this.tripsService.getTrip(request);
   }
 
-  @MessagePattern('findOneTrip')
-  findOne(@Payload() id: number) {
-    return this.tripsService.findOne(id);
+  async cancelTrip(request: tripPackage.CancelTripRequest): Promise<tripPackage.CancelTripResponse> {
+    return await this.tripsService.cancelTrip(request);
   }
 
-  @MessagePattern('updateTrip')
-  update(@Payload() updateTripDto: UpdateTripDto) {
-    // return this.tripsService.update(updateTripDto.id, updateTripDto);
+  async assignDriver(request: tripPackage.AssignDriverRequest): Promise<tripPackage.AssignDriverResponse> {
+    return await this.tripsService.assignDriver(request);
   }
 
-  @MessagePattern('removeTrip')
-  remove(@Payload() id: number) {
-    return this.tripsService.remove(id);
+  async startTrip(request: tripPackage.StartTripRequest): Promise<tripPackage.StartTripResponse> {
+    return await this.tripsService.startTrip(request);
+  }
+
+  async rejectTrip(request: tripPackage.RejectTripRequest): Promise<tripPackage.RejectTripResponse> {
+    return await this.tripsService.rejectTrip(request);
+  }
+
+  async completeTrip(request: tripPackage.CompleteTripRequest): Promise<tripPackage.CompleteTripResponse> {
+    return await this.tripsService.completeTrip(request);
+  }
+
+  async rateTrip(request: tripPackage.RateTripRequest): Promise<tripPackage.RateTripResponse> {
+    return await this.tripsService.rateTrip(request);
+  }
+
+  async tripHistory(request: tripPackage.TripHistoryRequest): Promise<tripPackage.TripHistoryResponse> {
+    return await this.tripsService.tripHistory(request);
   }
 }

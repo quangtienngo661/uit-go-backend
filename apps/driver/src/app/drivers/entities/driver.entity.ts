@@ -1,14 +1,14 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { DriverStatus } from '@uit-go-backend/shared'
+import { Column, CreateDateColumn, Entity, PrimaryColumn, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { commonPackage, DriverStatus } from '@uit-go-backend/shared'
 
 @Entity({ name: 'drivers' })
 export class Driver {
-  @PrimaryGeneratedColumn('uuid', { name: 'id' })
+  @PrimaryColumn('uuid', { name: 'id' }) // same as userId, not driverProfile Id
   id: string;
 
-  // Reference to User (NO FK - cross-database)
-  @Column('uuid', { name: 'user_id', nullable: false, unique: true })
-  userId: string;
+  // // Reference to User (NO FK - cross-database)
+  // @Column('uuid', { name: 'user_id', nullable: false, unique: true })
+  // userId: string;
 
   // Current Status
   @Column({

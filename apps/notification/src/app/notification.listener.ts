@@ -11,23 +11,27 @@ import { NotificationService } from './notification.service';
 export class NotificationListener {
   private readonly logger = new Logger(NotificationListener.name);
 
-  constructor(private readonly notificationService: NotificationService) {}
+  constructor(private readonly notificationService: NotificationService) { }
 
   @MessagePattern('trip.created')
   async handleTripCreated(@Payload() data: any, @Ctx() context: RmqContext) {
     this.logger.log(`📩 Received trip.created: ${JSON.stringify(data)}`);
 
-    await this.notificationService.sendEmailNotification(
-      data.userEmail,
-      'Xác nhận đặt chuyến thành công',
-      'Bạn đã đặt chuyến đi thành công. Cảm ơn bạn đã sử dụng UIT-Go!',
-    );
+    if (data.userEmail) {
+      await this.notificationService.sendEmailNotification(
+        data.userEmail,
+        'Xác nhận đặt chuyến thành công',
+        'Bạn đã đặt chuyến đi thành công. Cảm ơn bạn đã sử dụng UIT-Go!',
+      );
+    }
 
-    await this.notificationService.sendEmailNotification(
-      data.driverEmail,
-      'Có chuyến đi mới!',
-      'Một hành khách vừa đặt chuyến. Hãy kiểm tra ứng dụng để nhận chuyến.',
-    );
+    if (data.driverEmail) {
+      await this.notificationService.sendEmailNotification(
+        data.driverEmail,
+        'Có chuyến đi mới!',
+        'Một hành khách vừa đặt chuyến. Hãy kiểm tra ứng dụng để nhận chuyến.',
+      );
+    }
   }
 
   @MessagePattern('driver.accepted')

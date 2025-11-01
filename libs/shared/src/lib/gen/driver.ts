@@ -7,41 +7,125 @@
 /* eslint-disable */
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
+import { DriverStatus } from "./common";
 
 export const protobufPackage = "driverPackage";
 
-/** dummy data to run the service */
-export interface PingRequest {
+/** Update Status */
+export interface UpdateStatusRequest {
+  driverId: string;
+  status: DriverStatus;
 }
 
-export interface PingResponse {
-  message: string;
+export interface UpdateStatusResponse {
+  id: string;
+  data: Driver | undefined;
 }
 
-export interface TestRequest {
+/** Update Location */
+export interface UpdateLocationRequest {
+  driverId: string;
+  lng: number;
+  lat: number;
 }
 
-export interface TestResponse {
-  message: string;
+export interface UpdateLocationResponse {
+}
+
+/** Search */
+export interface FindNearbyDriversRequest {
+  lng: number;
+  lat: number;
+  radius: number;
+}
+
+export interface FindNearbyDriversResponse {
+  drivers: DriverWithLocation[];
+}
+
+/** Get Profile */
+export interface GetDriverProfileRequest {
+  driverId: string;
+}
+
+export interface GetDriverProfileResponse {
+  data: Driver | undefined;
+}
+
+/** Accept Trip */
+export interface AcceptTripRequest {
+  driverId: string;
+  tripId: string;
+}
+
+export interface AcceptTripResponse {
+  data: Driver | undefined;
+}
+
+export interface Driver {
+  id: string;
+  status: DriverStatus;
+  currentLat: number;
+  currentLng: number;
+  currentTripId: string;
+}
+
+export interface DriverWithLocation {
+  driverId: string;
+  distance: number;
+  coord: Coordinate | undefined;
+}
+
+export interface Coordinate {
+  lng: number;
+  lat: number;
 }
 
 export const DRIVER_PACKAGE_PACKAGE_NAME = "driverPackage";
 
 export interface DriverServiceClient {
-  ping(request: PingRequest): Observable<PingResponse>;
+  updateStatus(request: UpdateStatusRequest): Observable<UpdateStatusResponse>;
 
-  test(request: TestRequest): Observable<TestResponse>;
+  updateLocation(request: UpdateLocationRequest): Observable<UpdateLocationResponse>;
+
+  findNearbyDrivers(request: FindNearbyDriversRequest): Observable<FindNearbyDriversResponse>;
+
+  getDriverProfile(request: GetDriverProfileRequest): Observable<GetDriverProfileResponse>;
+
+  acceptTrip(request: AcceptTripRequest): Observable<AcceptTripResponse>;
 }
 
 export interface DriverServiceController {
-  ping(request: PingRequest): Promise<PingResponse> | Observable<PingResponse> | PingResponse;
+  updateStatus(
+    request: UpdateStatusRequest,
+  ): Promise<UpdateStatusResponse> | Observable<UpdateStatusResponse> | UpdateStatusResponse;
 
-  test(request: TestRequest): Promise<TestResponse> | Observable<TestResponse> | TestResponse;
+  updateLocation(
+    request: UpdateLocationRequest,
+  ): Promise<UpdateLocationResponse> | Observable<UpdateLocationResponse> | UpdateLocationResponse;
+
+  findNearbyDrivers(
+    request: FindNearbyDriversRequest,
+  ): Promise<FindNearbyDriversResponse> | Observable<FindNearbyDriversResponse> | FindNearbyDriversResponse;
+
+  getDriverProfile(
+    request: GetDriverProfileRequest,
+  ): Promise<GetDriverProfileResponse> | Observable<GetDriverProfileResponse> | GetDriverProfileResponse;
+
+  acceptTrip(
+    request: AcceptTripRequest,
+  ): Promise<AcceptTripResponse> | Observable<AcceptTripResponse> | AcceptTripResponse;
 }
 
 export function DriverServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["ping", "test"];
+    const grpcMethods: string[] = [
+      "updateStatus",
+      "updateLocation",
+      "findNearbyDrivers",
+      "getDriverProfile",
+      "acceptTrip",
+    ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("DriverService", method)(constructor.prototype[method], method, descriptor);

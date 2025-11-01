@@ -13,7 +13,8 @@ async function bootstrap() {
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
-      urls: [process.env.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq:5672'],
+      // urls: [process.env.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq:5672'],
+      urls: ['amqp://guest:guest@localhost:5672'],
       queue: 'notif.q',
       queueOptions: {
         durable: true,

@@ -1,14 +1,191 @@
 syntax = "proto3";
 
 package tripPackage;
+import "common.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
 
 service TripService {
-  rpc Ping (PingRequest) returns (PingResponse);
-
+  rpc CreateTrip (CreateTripRequest) returns (CreateTripResponse);
+  rpc GetTrip (GetTripRequest) returns (GetTripResponse);
+  rpc CancelTrip (CancelTripRequest) returns (CancelTripResponse);
+  rpc AssignDriver (AssignDriverRequest) returns (AssignDriverResponse);
+  rpc StartTrip (StartTripRequest) returns (StartTripResponse);
+  rpc RejectTrip (RejectTripRequest) returns (RejectTripResponse);
+  rpc CompleteTrip (CompleteTripRequest) returns (CompleteTripResponse);
+  rpc RateTrip (RateTripRequest) returns (RateTripResponse);
+  rpc TripHistory (TripHistoryRequest) returns (TripHistoryResponse);
 }
 
-// dummy data to run the service
-message PingRequest {}
-message PingResponse {
-  string message = 1;
+// Re-useable message
+message VehicleType {
+  common.VehicleType typeId = 1;
+  string type = 2;
+}
+
+message TripStatus {
+  common.TripStatus statusId = 1;
+  string status = 2;
+}
+
+message RaterRole {
+  common.Role roleId = 1; // enum
+  string raterRole = 2;
+}
+
+message Trip {
+  string id = 1;
+
+  // References (NO FK - cross-database)
+  string passengerId = 2;
+  string driverId = 3;
+
+  // Pickup Location
+  Coordinate pickup = 4;
+
+  // Dropoff Location
+  Coordinate dropoff = 5;
+
+  // Trip Details
+  VehicleType vehicleType = 6;
+
+  // Status (Simple State Machine)
+  TripStatus tripStatus = 7;
+
+  // Pricing
+  float distanceKm = 8;   
+  int32 estimatedPrice = 9; 
+  int32 finalPrice = 10;    
+
+  // Cancellation
+  string cancelledBy = 11;
+
+  // Timestamps
+  string createdAt = 12;
+  string acceptedAt = 13;
+  string completedAt = 14;
+  string cancelledAt = 15;
+  string updatedAt = 16;
+
+  repeated Rating ratings = 17;
+}
+
+message Rating {
+  string id = 1;
+  string tripId = 2;
+  int32 score = 3; // 1-5 stars
+  string comment = 4;
+  RaterRole raterRole = 5; // enum
+  string createdAt = 6;
+}
+
+
+message Coordinate {
+  float lng = 1; 
+  float lat = 2;
+  string address = 3;
+}
+
+// Create Trip
+message CreateTripRequest {
+  string passengerId = 1; // UUID
+
+  Coordinate pickup = 2;   // pickup location
+  Coordinate dropoff = 3;  // dropoff location
+
+  VehicleType vehicleType = 4;
+
+  // Optional fields
+  float distanceKm = 5;      // optional
+  float estimatedPrice = 6;  // optional
+}
+
+message CreateTripResponse {
+  bool success = 1; 
+  Trip data = 2; 
+}
+
+// Get Trip
+message GetTripRequest {
+  string tripId = 1; 
+}
+
+message GetTripResponse {
+  bool success = 1; 
+  Trip data = 2; 
+} 
+
+// Cancel Trip
+message CancelTripRequest {
+  string tripId = 1; 
+}
+
+message CancelTripResponse {
+  bool success = 1;
+  Trip data = 2; 
+}
+
+// Assign Driver
+message AssignDriverRequest {
+  string tripId = 1; 
+  string driverId = 2;
+}
+
+message AssignDriverResponse {
+  bool success = 1; 
+  Trip data = 2;
+}
+
+// Start Trip
+message StartTripRequest {
+  string tripId = 1; 
+}
+
+message StartTripResponse {
+  bool success = 1;
+  Trip data = 2; 
+}
+
+// Reject Trip
+message RejectTripRequest {
+  string tripId = 1; 
+}
+
+message RejectTripResponse {
+    
+}
+
+// Complete Trip
+message CompleteTripRequest {
+  string tripId = 1; 
+}
+
+message CompleteTripResponse {
+  bool success = 1; 
+  Trip data = 2; 
+}
+
+// Rate Trip
+message RateTripRequest {
+  string tripId = 1; 
+  string ratedBy = 2;
+  string ratedUser = 3;
+  RaterRole raterRole = 4;
+  int32 rating = 5; 
+  string comment = 6;
+}
+
+message RateTripResponse {
+  bool success = 1; 
+  Rating tripRating = 2;
+}
+
+// Trip History
+message TripHistoryRequest {
+  string userId = 1;
+}
+
+message TripHistoryResponse {
+  string userId = 1; 
+  repeated Trip trips = 2;
 }
