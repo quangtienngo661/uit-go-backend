@@ -7,30 +7,255 @@
 /* eslint-disable */
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
+import { Role, TripStatus as TripStatus2, VehicleType as VehicleType1 } from "./common";
 
 export const protobufPackage = "tripPackage";
 
-/** dummy data to run the service */
-export interface PingRequest {
+/** Re-useable message */
+export interface VehicleType {
+  typeId: VehicleType1;
+  type: string;
 }
 
-export interface PingResponse {
-  message: string;
+export interface TripStatus {
+  statusId: TripStatus2;
+  status: string;
+}
+
+export interface RaterRole {
+  /** enum */
+  roleId: Role;
+  raterRole: string;
+}
+
+export interface Trip {
+  id: string;
+  /** References (NO FK - cross-database) */
+  passengerId: string;
+  driverId: string;
+  /** Pickup Location */
+  pickup:
+    | Coordinate
+    | undefined;
+  /** Dropoff Location */
+  dropoff:
+    | Coordinate
+    | undefined;
+  /** Trip Details */
+  vehicleType:
+    | VehicleType
+    | undefined;
+  /** Status (Simple State Machine) */
+  tripStatus:
+    | TripStatus
+    | undefined;
+  /** Pricing */
+  distanceKm: number;
+  estimatedPrice: number;
+  finalPrice: number;
+  /** Cancellation */
+  cancelledBy: string;
+  /** Timestamps */
+  createdAt: string;
+  acceptedAt: string;
+  completedAt: string;
+  cancelledAt: string;
+  updatedAt: string;
+  ratings: Rating[];
+}
+
+export interface Rating {
+  id: string;
+  tripId: string;
+  /** 1-5 stars */
+  score: number;
+  comment: string;
+  /** enum */
+  raterRole: RaterRole | undefined;
+  createdAt: string;
+}
+
+export interface Coordinate {
+  lng: number;
+  lat: number;
+  address: string;
+}
+
+/** Create Trip */
+export interface CreateTripRequest {
+  /** UUID */
+  passengerId: string;
+  /** pickup location */
+  pickup:
+    | Coordinate
+    | undefined;
+  /** dropoff location */
+  dropoff: Coordinate | undefined;
+  vehicleType:
+    | VehicleType
+    | undefined;
+  /** Optional fields */
+  distanceKm: number;
+  /** optional */
+  estimatedPrice: number;
+}
+
+export interface CreateTripResponse {
+  success: boolean;
+  data: Trip | undefined;
+}
+
+/** Get Trip */
+export interface GetTripRequest {
+  tripId: string;
+}
+
+export interface GetTripResponse {
+  success: boolean;
+  data: Trip | undefined;
+}
+
+/** Cancel Trip */
+export interface CancelTripRequest {
+  tripId: string;
+}
+
+export interface CancelTripResponse {
+  success: boolean;
+  data: Trip | undefined;
+}
+
+/** Assign Driver */
+export interface AssignDriverRequest {
+  tripId: string;
+  driverId: string;
+}
+
+export interface AssignDriverResponse {
+  success: boolean;
+  data: Trip | undefined;
+}
+
+/** Start Trip */
+export interface StartTripRequest {
+  tripId: string;
+}
+
+export interface StartTripResponse {
+  success: boolean;
+  data: Trip | undefined;
+}
+
+/** Reject Trip */
+export interface RejectTripRequest {
+  tripId: string;
+}
+
+export interface RejectTripResponse {
+}
+
+/** Complete Trip */
+export interface CompleteTripRequest {
+  tripId: string;
+}
+
+export interface CompleteTripResponse {
+  success: boolean;
+  data: Trip | undefined;
+}
+
+/** Rate Trip */
+export interface RateTripRequest {
+  tripId: string;
+  ratedBy: string;
+  ratedUser: string;
+  raterRole: RaterRole | undefined;
+  rating: number;
+  comment: string;
+}
+
+export interface RateTripResponse {
+  success: boolean;
+  tripRating: Rating | undefined;
+}
+
+/** Trip History */
+export interface TripHistoryRequest {
+  userId: string;
+}
+
+export interface TripHistoryResponse {
+  userId: string;
+  trips: Trip[];
 }
 
 export const TRIP_PACKAGE_PACKAGE_NAME = "tripPackage";
 
 export interface TripServiceClient {
-  ping(request: PingRequest): Observable<PingResponse>;
+  createTrip(request: CreateTripRequest): Observable<CreateTripResponse>;
+
+  getTrip(request: GetTripRequest): Observable<GetTripResponse>;
+
+  cancelTrip(request: CancelTripRequest): Observable<CancelTripResponse>;
+
+  assignDriver(request: AssignDriverRequest): Observable<AssignDriverResponse>;
+
+  startTrip(request: StartTripRequest): Observable<StartTripResponse>;
+
+  rejectTrip(request: RejectTripRequest): Observable<RejectTripResponse>;
+
+  completeTrip(request: CompleteTripRequest): Observable<CompleteTripResponse>;
+
+  rateTrip(request: RateTripRequest): Observable<RateTripResponse>;
+
+  tripHistory(request: TripHistoryRequest): Observable<TripHistoryResponse>;
 }
 
 export interface TripServiceController {
-  ping(request: PingRequest): Promise<PingResponse> | Observable<PingResponse> | PingResponse;
+  createTrip(
+    request: CreateTripRequest,
+  ): Promise<CreateTripResponse> | Observable<CreateTripResponse> | CreateTripResponse;
+
+  getTrip(request: GetTripRequest): Promise<GetTripResponse> | Observable<GetTripResponse> | GetTripResponse;
+
+  cancelTrip(
+    request: CancelTripRequest,
+  ): Promise<CancelTripResponse> | Observable<CancelTripResponse> | CancelTripResponse;
+
+  assignDriver(
+    request: AssignDriverRequest,
+  ): Promise<AssignDriverResponse> | Observable<AssignDriverResponse> | AssignDriverResponse;
+
+  startTrip(request: StartTripRequest): Promise<StartTripResponse> | Observable<StartTripResponse> | StartTripResponse;
+
+  rejectTrip(
+    request: RejectTripRequest,
+  ): Promise<RejectTripResponse> | Observable<RejectTripResponse> | RejectTripResponse;
+
+  completeTrip(
+    request: CompleteTripRequest,
+  ): Promise<CompleteTripResponse> | Observable<CompleteTripResponse> | CompleteTripResponse;
+
+  rateTrip(request: RateTripRequest): Promise<RateTripResponse> | Observable<RateTripResponse> | RateTripResponse;
+
+  tripHistory(
+    request: TripHistoryRequest,
+  ): Promise<TripHistoryResponse> | Observable<TripHistoryResponse> | TripHistoryResponse;
 }
 
 export function TripServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["ping"];
+    const grpcMethods: string[] = [
+      "createTrip",
+      "getTrip",
+      "cancelTrip",
+      "assignDriver",
+      "startTrip",
+      "rejectTrip",
+      "completeTrip",
+      "rateTrip",
+      "tripHistory",
+    ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("TripService", method)(constructor.prototype[method], method, descriptor);

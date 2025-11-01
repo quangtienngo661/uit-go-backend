@@ -2,20 +2,83 @@ syntax = "proto3";
 
 package driverPackage;
 
+import "google/protobuf/timestamp.proto";
+import "common.proto";
+
 service DriverService {
-  rpc Ping (PingRequest) returns (PingResponse);
-  rpc Test (TestRequest) returns (TestResponse);
+  rpc UpdateStatus (UpdateStatusRequest) returns (UpdateStatusResponse);
+  rpc UpdateLocation (UpdateLocationRequest) returns (UpdateLocationResponse);
+  rpc FindNearbyDrivers (FindNearbyDriversRequest) returns (FindNearbyDriversResponse);
+  rpc GetDriverProfile (GetDriverProfileRequest) returns (GetDriverProfileResponse);
+  rpc AcceptTrip (AcceptTripRequest) returns (AcceptTripResponse);
 }
 
-// dummy data to run the service
-message PingRequest {}
-
-message PingResponse {
-  string message = 1;
+// Update Status
+message UpdateStatusRequest {
+  string driverId = 1 ;
+  common.DriverStatus status = 2;
 }
 
-message TestRequest {}
-
-message TestResponse {
-  string message = 1;
+message UpdateStatusResponse {
+  string id = 1; 
+  Driver data = 2;
 }
+
+// Update Location
+message UpdateLocationRequest {
+  string driverId = 1;
+  float lng = 2; 
+  float lat = 3; 
+}
+message UpdateLocationResponse {
+
+}
+
+// Search
+message FindNearbyDriversRequest {
+  float lng = 1; 
+  float lat = 2; 
+  float radius = 3; 
+}
+message FindNearbyDriversResponse {
+  repeated DriverWithLocation drivers = 1;
+}
+
+// Get Profile
+message GetDriverProfileRequest {
+  string driverId = 1; 
+}
+
+message GetDriverProfileResponse {
+  Driver data = 1;
+}
+
+// Accept Trip 
+message AcceptTripRequest {
+  string driverId = 1; 
+  string tripId = 2; 
+}
+
+message AcceptTripResponse {
+  Driver data = 1;
+}
+
+message Driver {
+  string id = 1; 
+  common.DriverStatus status = 2;
+  float currentLat = 3; 
+  float currentLng = 4; 
+  string currentTripId = 5;
+}
+
+message DriverWithLocation {
+  string driverId = 1; 
+  float distance = 2; 
+  Coordinate coord = 3;
+}
+
+message Coordinate {
+  float lng = 1; 
+  float lat = 2;
+}
+

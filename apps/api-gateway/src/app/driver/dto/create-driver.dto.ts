@@ -1,4 +1,4 @@
-import { DriverStatus } from "@uit-go-backend/shared";
+import { commonPackage, DriverStatus } from "@uit-go-backend/shared";
 import { IsEnum, IsLatitude, IsLongitude, IsNotEmpty, IsNumber, IsOptional, IsUUID } from "class-validator";
 
 export class CreateDriverDto {
@@ -6,9 +6,9 @@ export class CreateDriverDto {
   @IsNotEmpty()
   userId: string;
 
-  @IsEnum(DriverStatus)
+  @IsEnum(commonPackage.DriverStatus)
   @IsOptional()
-  status?: DriverStatus;
+  status?: commonPackage.DriverStatus;
 
   @IsNumber()
   @IsOptional()

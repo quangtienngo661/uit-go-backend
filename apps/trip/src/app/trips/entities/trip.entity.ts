@@ -16,6 +16,9 @@ export class Trip {
   @Column('uuid', { nullable: false, name: 'passenger_id' })
   passengerId: string;
 
+  @Column('text', { name: 'potential_drivers', array: true, default: [] })
+  potentialDrivers?: string[];
+
   @Column('uuid', { nullable: true, name: 'driver_id' })
   driverId: string;
 
@@ -40,19 +43,19 @@ export class Trip {
   dropoffAddress: string;
 
   // Trip Details
-  @Column({ 
-    name: 'vehicle_type', 
-    type: 'varchar', 
-    length: 50, 
-    nullable: false 
+  @Column({
+    name: 'vehicle_type',
+    type: 'varchar',
+    length: 50,
+    nullable: false
   })
   vehicleType: VehicleType;
 
   // Status (Simple State Machine)
-  @Column({ 
-    name: 'trip_status', 
-    type: 'varchar', 
-    length: 20, 
+  @Column({
+    name: 'trip_status',
+    type: 'varchar',
+    length: 20,
     nullable: false,
     default: 'searching'
   })
@@ -69,11 +72,11 @@ export class Trip {
   finalPrice: number;
 
   // Cancellation
-  @Column({ 
-    name: 'cancelled_by', 
-    type: 'varchar', 
-    length: 20, 
-    nullable: true 
+  @Column({
+    name: 'cancelled_by',
+    type: 'varchar',
+    length: 20,
+    nullable: true
   })
   cancelledBy: string;
 

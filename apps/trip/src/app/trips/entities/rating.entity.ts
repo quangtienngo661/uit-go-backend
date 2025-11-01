@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Trip } from "./trip.entity";
+import { Role } from "@uit-go-backend/shared";
 
 @Entity({ name: 'ratings' })
 @Index('idx_ratings_trip_id', ['trip'])
@@ -26,7 +27,7 @@ export class Rating {
     length: 20, 
     nullable: false 
   })
-  raterRole: string; // 'passenger' | 'driver'
+  raterRole: Role; // 'passenger' | 'driver'
 
   // Rating Details
   @Column({ name: 'rating', type: 'integer', nullable: false })

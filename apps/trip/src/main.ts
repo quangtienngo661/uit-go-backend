@@ -11,8 +11,8 @@ import { join } from 'path';
 import { tripPackage } from '@uit-go-backend/shared';
 
 async function bootstrap() {
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
+  const app = await NestFactory.create(AppModule);
+  app.connectMicroservice<MicroserviceOptions>(
     {
       transport: Transport.GRPC,
       options: {
@@ -22,8 +22,24 @@ async function bootstrap() {
       }
     }
   );
+
+  app.connectMicroservice<MicroserviceOptions>(
+    {
+      transport: Transport.RMQ,
+      options: {
+        urls: ['amqp://guest:guest@localhost:5672'],
+        queue: 'trip.q',
+        queueOptions: {
+          durable: true
+        }
+      }
+    },
+  );
+  
   const port = process.env.TRIP_SERVICE_PORT || 3003;
-  await app.listen();
+  app.startAllMicroservices();
+  await app.listen(port);
+  // await rmqApp.listen();
   Logger.log(
     `🚀 Trip Service is running with gRPC port ${port}`
   );
