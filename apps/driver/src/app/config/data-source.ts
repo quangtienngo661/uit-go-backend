@@ -15,7 +15,7 @@ export const dataSourceOptions: DataSourceOptions = {
     database: process.env.DRIVERDB_DATABASE,
     entities: [Driver],
     synchronize: true, // development only
-    migrations: [__dirname + '/../../migrations/*{.ts,.js}'],
+    migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     logging: true
 }
 

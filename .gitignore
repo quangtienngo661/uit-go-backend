@@ -48,4 +48,6 @@ Thumbs.db
 .env.development
 .env.test
 .env.production
-node_modules
+
+# docker dev
+docker-compose-dev.yml

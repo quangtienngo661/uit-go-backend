@@ -1,35 +1,55 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { DriversService } from './drivers.service';
-import { CreateDriverDto } from './dto/create-driver.dto';
-import { UpdateDriverDto } from './dto/update-driver.dto';
+import { driverPackage } from '@uit-go-backend/shared';
 
 @Controller()
-export class DriversController {
-  constructor(private readonly driversService: DriversService) {}
+@driverPackage.DriverServiceControllerMethods()
+export class DriversController implements driverPackage.DriverServiceController {
+  constructor(private readonly driversService: DriversService) { }
 
-  @MessagePattern('createDriver')
-  create(@Payload() createDriverDto: CreateDriverDto) {
-    return this.driversService.create(createDriverDto);
-  }
+  async updateStatus(request: driverPackage.UpdateStatusRequest): Promise<driverPackage.UpdateStatusResponse> {
+    return this.driversService.updateStatus(request)
+  };
 
-  @MessagePattern('findAllDrivers')
-  findAll() {
-    return this.driversService.findAll();
-  }
+  async updateLocation(request: driverPackage.UpdateLocationRequest): Promise<driverPackage.UpdateLocationResponse> {
+    return this.driversService.updateLocation(request)
+  };
 
-  @MessagePattern('findOneDriver')
-  findOne(@Payload() id: number) {
-    return this.driversService.findOne(id);
-  }
+  async findNearbyDrivers(request: driverPackage.FindNearbyDriversRequest): Promise<driverPackage.FindNearbyDriversResponse> {
+    return this.driversService.findNearbyDrivers(request)
+  };
 
-  @MessagePattern('updateDriver')
-  update(@Payload() updateDriverDto: UpdateDriverDto) {
-    // return this.driversService.update(updateDriverDto.id, updateDriverDto);
-  }
+  async getDriverProfile(request: driverPackage.GetDriverProfileRequest): Promise<driverPackage.GetDriverProfileResponse> {
+    return this.driversService.getDriverProfile(request)
+  };
 
-  @MessagePattern('removeDriver')
-  remove(@Payload() id: number) {
-    return this.driversService.remove(id);
-  }
+  async acceptTrip(request: driverPackage.AcceptTripRequest): Promise<driverPackage.AcceptTripResponse> {
+    return this.driversService.acceptTrip(request)
+  };
+
+  // @MessagePattern('createDriver')
+  // create(@Payload() createDriverDto: CreateDriverDto) {
+  //   return this.driversService.create(createDriverDto);
+  // }
+
+  // @MessagePattern('findAllDrivers')
+  // findAll() {
+  //   return this.driversService.findAll();
+  // }
+
+  // @MessagePattern('findOneDriver')
+  // findOne(@Payload() id: number) {
+  //   return this.driversService.findOne(id);
+  // }
+
+  // @MessagePattern('updateDriver')
+  // update(@Payload() updateDriverDto: UpdateDriverDto) {
+  //   // return this.driversService.update(updateDriverDto.id, updateDriverDto);
+  // }
+
+  // @MessagePattern('removeDriver')
+  // remove(@Payload() id: number) {
+  //   return this.driversService.remove(id);
+  // }
 }

@@ -7,12 +7,12 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { join } from 'path';
+import { join } from 'path'; ``
 import { driverPackage } from '@uit-go-backend/shared';
 
 async function bootstrap() {
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
+  const app = await NestFactory.create(AppModule);
+  app.connectMicroservice(
     {
       transport: Transport.GRPC,
       options: {
@@ -23,8 +23,22 @@ async function bootstrap() {
     }
   );
 
+  app.connectMicroservice(
+    {
+      transport: Transport.RMQ,
+      options: {
+        urls: ['amqp://guest:guest@localhost:5672'],
+        queue: 'driver.q',
+        queueOptions: {
+          durable: true
+        }
+      }
+    },
+  );
+
   const port = process.env.DRIVER_SERVICE_PORT || 3004;
-  await app.listen();
+  app.startAllMicroservices();
+  await app.listen(port);
   Logger.log(
     `🚀 Driver Service is running with gRPC port ${port}`
   );
