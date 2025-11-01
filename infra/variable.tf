@@ -85,3 +85,22 @@ variable "rabbitmq_password" {
   type = string
   sensitive = true
   }
+
+# FinOps variables
+variable "budget_alert_emails" {
+  type = list(string)
+  default = []
+  description = "Email addresses to notify for budget alerts"
+  }
+
+variable "finops_team_email" {
+  type = string
+  default = ""
+  description = "Email for cost anomaly alerts"
+  }
+
+variable "sns_topic_arn" {
+  type = string
+  default = ""
+  description = "SNS topic ARN for CloudWatch alarms"
+  }
