@@ -131,7 +131,7 @@ export class DriversService {
     await this.driverRepo.save(driver);
     this.tripRmqClient.emit('driver.accepted', { tripId, driverId })
     // TODO: get email by userId
-    this.notifRmqClient.emit('driver.accepted', { email: mock_emails.userEmail })
+    // this.notifRmqClient.emit('driver.accepted', { email: mock_emails.userEmail })
 
     // Send message to Trip Driver that the trip is accepted
 

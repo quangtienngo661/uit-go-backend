@@ -18,7 +18,7 @@ export class TripsService {
     @InjectRepository(Rating) private readonly ratingRepo: Repository<Rating>,
     @Inject('DRIVER_SERVICE_RMQ') private readonly driverRmqClient: ClientProxy,
     @Inject('NOTIFICATION_SERVICE_RMQ') private readonly notifRmqClient: ClientProxy,
-
+    @Inject('USER_SERVICE') private readonly userClient: ClientProxy
     // private readonly rmqService: RmqService,
   ) { }
 
@@ -53,12 +53,16 @@ export class TripsService {
     this.driverRmqClient.emit(
       'trip.created',
       newTrip,
+    );
+
+    const passenger = await firstValueFrom(
+      this.userClient.send({ cmd: 'getCurrentProfile' }, newTrip.passengerId)
     )
 
     this.notifRmqClient.emit(
       'trip.created',
-      { userEmail: mock_emails.userEmail }
-    )
+      { userEmail: passenger.email }
+    );
 
     // Temporarily inject microservice to get drivers list
 
@@ -100,7 +104,20 @@ export class TripsService {
     }
 
     // TODO: get email by userId
-    this.notifRmqClient.emit('trip.cancelled', { email: mock_emails.driverEmail })
+    // if (!trip.driverId) {
+    //   const passenger = await firstValueFrom(
+    //     this.userClient.send({ cmd: 'getCurrentProfile' }, trip.passengerId)
+    //   )
+    //   this.notifRmqClient.emit('trip.cancelled', { email: passenger.email })
+    // } else {
+
+    // }
+    const driver = await firstValueFrom(
+      this.userClient.send({ cmd: 'getCurrentProfile' }, trip.driverId)
+    )
+    
+    if (driver.email)
+      this.notifRmqClient.emit('trip.cancelled', { driverEmail: driver.email })
 
     trip.tripStatus = TripStatus.CANCELLED;
     trip.cancelledAt = new Date(Date.now())
@@ -120,6 +137,15 @@ export class TripsService {
     if (!trip) {
       throw new NotFoundException('Trip not found');
     }
+
+    const passenger = await firstValueFrom(
+      this.userClient.send({ cmd: 'getCurrentProfile' }, trip.passengerId)
+    )
+
+    this.notifRmqClient.emit('driver.accepted', { userEmail: passenger.email })
+
+
+    // this.notifRmqClient.emit('trip.completed', { userEmail: passenger.email })
 
     trip.driverId = driverId;
     trip.tripStatus = TripStatus.ACCEPTED;
@@ -141,7 +167,11 @@ export class TripsService {
     }
 
     // TODO: get email by userId, change driver state to online
-    this.notifRmqClient.emit('trip.completed', { email: mock_emails.userEmail })
+    const passenger = await firstValueFrom(
+      this.userClient.send({ cmd: 'getCurrentProfile' }, trip.passengerId)
+    )
+
+    this.notifRmqClient.emit('trip.completed', { userEmail: passenger.email })
 
     trip.tripStatus = TripStatus.COMPLETED;
     trip.completedAt = new Date(Date.now())
@@ -164,8 +194,12 @@ export class TripsService {
 
     trip.tripStatus = TripStatus.IN_PROGRESS;
 
+    const passenger = await firstValueFrom(
+      this.userClient.send({ cmd: 'getCurrentProfile' }, trip.passengerId)
+    )
+
     // TODO: get email by userId
-    this.notifRmqClient.emit('trip.started', { email: mock_emails.userEmail })
+    this.notifRmqClient.emit('trip.started', { userEmail: passenger.email })
     const startedTrip = await this.tripRepo.save(trip);
 
     return tripResponse(startedTrip);
@@ -235,19 +269,28 @@ export class TripsService {
 
   async inviteDriver(invitedTrip: any) {
     const remainingDrivers = [...invitedTrip.potentialDrivers];
+
     console.log(typeof remainingDrivers)
     if (remainingDrivers.length === 0) {
       // TODO: get email by userId
-      this.notifRmqClient.emit('trip.cancelled', { driverEmail: 'example@gm.com' })
+      // const driver = await firstValueFrom(
+      //   this.userClient.send({ cmd: 'getCurrentProfile' }, nextDriver.driverId)
+      // )
+      // this.notifRmqClient.emit('trip.cancelled', { driverEmail: 'example@gm.com' })
       this.cancelTrip({ tripId: invitedTrip.id })
       return;
     }
 
     const nextDriver = remainingDrivers[0]; // use for getting email later
+
+    const driver = await firstValueFrom(
+      this.userClient.send({ cmd: 'getCurrentProfile' }, nextDriver.driverId)
+    )
     invitedTrip.potentialDrivers = remainingDrivers.splice(1);
     await this.tripRepo.save(invitedTrip);
+
     // TODO: get email by userId
-    this.notifRmqClient.emit('trip.created', { driverEmail: mock_emails.driverEmail });
+    this.notifRmqClient.emit('trip.created', { driverEmail: driver.email });
   }
 
   // async handleDriverAccepted(data: any, context: RmqContext) {
