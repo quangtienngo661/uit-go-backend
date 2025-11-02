@@ -37,6 +37,15 @@ import { TripsListener } from '../rmqService/trips.listener';
             durable: true
           }
         }
+      },
+      {
+        name: 'USER_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          // host: process.env.USER_SERVICE_HOST || 'user-service',
+          host: process.env.USER_SERVICE_HOST || '0.0.0.0',
+          port: parseInt(process.env.USER_SERVICE_PORT || '3002'),
+        }
       }
     ]),
   ],
