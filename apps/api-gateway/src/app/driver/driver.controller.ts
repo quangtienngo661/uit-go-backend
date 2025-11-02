@@ -62,7 +62,7 @@ export class DriverController implements OnModuleInit {
       tripId: body.tripId, driverId
     }
 
-    console.log(request.tripId)
+    // console.log(request.tripId)S
     return this.driverServiceClient.acceptTrip(request);
 
     // return request
