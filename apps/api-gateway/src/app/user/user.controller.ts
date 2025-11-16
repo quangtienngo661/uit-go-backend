@@ -82,9 +82,18 @@ export class UserController {
   @Get('current-profile')
   @UseGuards(SupabaseGuard)
   getCurrentProfile(@CurrentUser() user: any) {
-    if(user?.role === 'passenger'){
+    if(user?.role === Role.PASSENGER){
       return this.userService.findOnePassenger(user.id);
     }
     return this.userService.findOneDriverProfile(user.id);
+  }
+
+  @Patch('current-profile')
+  @UseGuards(SupabaseGuard)
+  updateCurrentProfile(@CurrentUser() user: any, @Body() body: any) {
+    if(user?.role === Role.PASSENGER){
+      return this.userService.updatePassenger(user.id, body);
+    }
+    return this.userService.updateDriverProfileByUserId(user.id, body);
   }
 }
