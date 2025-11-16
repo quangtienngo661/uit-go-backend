@@ -79,6 +79,15 @@ export class UserService {
     );
   }
 
+  async updateDriverProfileByUserId(userId: string, data: any) {
+    return firstValueFrom(
+      this.userClient.send(
+        { cmd: 'updateDriverProfileByUserId' },
+        { userId, data }
+      )
+    );
+  }
+
   async removeDriverProfile(id: string) {
     return firstValueFrom(
       this.userClient.send({ cmd: 'removeDriverProfile' }, id)
