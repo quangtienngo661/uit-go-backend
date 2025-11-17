@@ -13,7 +13,7 @@ import { authPackage } from '@uit-go-backend/shared';
         transport: Transport.GRPC,
         options: {
           package: authPackage.AUTH_PACKAGE_PACKAGE_NAME,
-          url: 'auth-service:3001',
+          url: '0.0.0.0:3001',
           protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/auth.proto')
         }
       }

@@ -36,6 +36,7 @@ export class AuthController implements OnModuleInit {
 
   @Post('register/user')
   async registerUser(@Body() registerDto: RegisterUserDto) {
+    console.log(typeof registerDto, registerDto)
     const response = await firstValueFrom(
       this.authServiceClient.signUpUser({
         email: registerDto.email,

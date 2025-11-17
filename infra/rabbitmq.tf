@@ -1,35 +1,50 @@
 # Central Exchange (topic)
 resource "rabbitmq_exchange" "events" {
-  name     = "uitgo.events"
-  vhost    = "/"
-  type     = "topic"
-  durable  = true
-  auto_delete = false
+  name  = "uitgo.events"
+  vhost = "/"
+
+  settings {
+    type        = "topic"
+    durable     = true
+    auto_delete = false
+  }
 }
 
 # Queues
 resource "rabbitmq_queue" "trip_q" {
-  name    = "trip-service.q"
-  vhost   = "/"
-  durable = true
+  name  = "trip-service.q"
+  vhost = "/"
+
+  settings {
+    durable = true
+  }
 }
 
 resource "rabbitmq_queue" "driver_q" {
-  name    = "driver-service.q"
-  vhost   = "/"
-  durable = true
+  name  = "driver-service.q"
+  vhost = "/"
+
+  settings {
+    durable = true
+  }
 }
 
 resource "rabbitmq_queue" "notification_q" {
-  name    = "notification-service.q"
-  vhost   = "/"
-  durable = true
+  name  = "notification-service.q"
+  vhost = "/"
+
+  settings {
+    durable = true
+  }
 }
 
 resource "rabbitmq_queue" "dlq" {
-  name    = "uitgo.dlq"
-  vhost   = "/"
-  durable = true
+  name  = "uitgo.dlq"
+  vhost = "/"
+
+  settings {
+    durable = true
+  }
 }
 
 # Bindings the routing keys according to architecture model

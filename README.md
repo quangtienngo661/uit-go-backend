@@ -71,15 +71,15 @@ UIT-Go follows a **microservices cloud-native pattern** with the following servi
     │         │        │         │           │
     ▼         ▼        ▼         ▼           │
  Supabase  User-DB  Trip-DB  Driver-DB       │
-                                 │            │
-                                 ▼            │
+                                 │           │
+                                 ▼           │
                              Redis Geo       │
                                              │
          ┌───────────────────────────────────┘
          │
          ▼
    ┌──────────────┐
-   │  RabbitMQ    │ (Event Bus)
+   │  RabbitMQ    │ (Event Bus)-
    └──────────────┘
 ```
 

@@ -245,24 +245,23 @@ module "rds_driver" {
 ############################################
 # 7) ElastiCache Redis
 ############################################
-module "redis_subnet_group" {
-  source  = "terraform-aws-modules/elasticache/aws//modules/subnet-group"
-  version = "~> 1.8"
-  subnet_group_name = "${local.name_prefix}-redis-subnets"
+resource "aws_elasticache_subnet_group" "redis" {
+  name       = "${local.name_prefix}-redis-subnets"
   subnet_ids = module.vpc.private_subnets
+  tags       = local.tags
 }
 
-module "redis" {
-  source  = "terraform-aws-modules/elasticache/aws"
-  version = "~> 1.8"
-  cluster_id         = "${local.name_prefix}-redis"
-  engine             = "redis"
-  node_type          = "cache.t4g.small"
-  num_cache_nodes    = 1
-  subnet_group_name  = module.redis_subnet_group.this_elasticache_subnet_group_name
-  security_group_ids = [aws_security_group.redis.id]
+resource "aws_elasticache_cluster" "redis" {
+  cluster_id           = "${local.name_prefix}-redis"
+  engine               = "redis"
+  node_type            = "cache.t4g.small"
+  num_cache_nodes      = 1
   parameter_group_name = "default.redis7"
-  tags = local.tags
+  engine_version       = "7.0"
+  port                 = 6379
+  subnet_group_name    = aws_elasticache_subnet_group.redis.name
+  security_group_ids   = [aws_security_group.redis.id]
+  tags                 = local.tags
 }
 
 ############################################
@@ -404,7 +403,7 @@ locals {
       { name = "DRIVERDB_USERNAME", value = var.db_master_username },
       { name = "DRIVERDB_PASSWORD", value = coalesce(var.db_master_password, random_password.db.result) },
       { name = "DRIVERDB_DATABASE", value = "driverdb" },
-      { name = "REDIS_HOST", value = module.redis.primary_endpoint_address },
+      { name = "REDIS_HOST", value = aws_elasticache_cluster.redis.cache_nodes[0].address },
       { name = "REDIS_PORT", value = "6379" }
     ]
     "notification-service" = [
@@ -453,5 +452,6 @@ resource "aws_ecs_service" "svc" {
   }
 
   depends_on = [aws_lb_listener.http]
-  tags       = local.tags
+  tags       = local.service_tags[each.key]
+  propagate_tags = "SERVICE"
 }

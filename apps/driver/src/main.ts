@@ -17,7 +17,7 @@ async function bootstrap() {
       transport: Transport.GRPC,
       options: {
         package: driverPackage.DRIVER_PACKAGE_PACKAGE_NAME,
-        url: '0.0.0.0:3004',
+        url: 'driver-service:3004',
         protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/driver.proto')
       }
     }
@@ -27,7 +27,7 @@ async function bootstrap() {
     {
       transport: Transport.RMQ,
       options: {
-        urls: ['amqp://guest:guest@localhost:5672'],
+        urls: ['amqp://guest:guest@rabbitmq:5672'],
         queue: 'driver.q',
         queueOptions: {
           durable: true
@@ -37,8 +37,8 @@ async function bootstrap() {
   );
 
   const port = process.env.DRIVER_SERVICE_PORT || 3004;
-  app.startAllMicroservices();
-  await app.listen(port);
+  await app.startAllMicroservices();
+  // await app.listen(port);
   Logger.log(
     `🚀 Driver Service is running with gRPC port ${port}`
   );

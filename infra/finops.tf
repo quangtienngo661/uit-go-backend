@@ -3,7 +3,7 @@
 # This file implements Module E cost governance requirements
 ############################################
 
-# 1) AWS Budget for monthly cost control
+# 1) AWS Budget for monthly cost control (Overall)
 resource "aws_budgets_budget" "monthly" {
   name              = "${local.name_prefix}-monthly-budget"
   budget_type       = "COST"
@@ -35,6 +35,44 @@ resource "aws_budgets_budget" "monthly" {
     name   = "TagKeyValue"
     values = ["user:Project$${var.project}"]
   }
+}
+
+# 1b) Per-Service Budgets for granular cost control
+resource "aws_budgets_budget" "service_budgets" {
+  for_each = local.service_cfg
+
+  name              = "${local.name_prefix}-${each.key}-budget"
+  budget_type       = "COST"
+  limit_amount      = tostring(each.value.budget)
+  limit_unit        = "USD"
+  time_unit         = "MONTHLY"
+  time_period_start = "2025-11-01_00:00"
+
+  # Alert at 80% threshold
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 80
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "ACTUAL"
+    subscriber_email_addresses = var.budget_alert_emails
+  }
+
+  # Alert at 100% actual spend
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 100
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "ACTUAL"
+    subscriber_email_addresses = var.budget_alert_emails
+  }
+
+  # Filter by service tag
+  cost_filter {
+    name   = "TagKeyValue"
+    values = ["user:Service$${each.key}"]
+  }
+
+  tags = local.service_tags[each.key]
 }
 
 # 2) CloudWatch Cost Anomaly Detection
@@ -158,76 +196,6 @@ resource "aws_cloudwatch_metric_alarm" "rds_high_connections" {
   tags = local.tags
 }
 
-# 5) Cost Allocation Tags (enforce on all resources)
-resource "aws_ce_cost_category" "project_category" {
-  name         = "UIT-Go-Project-Category"
-  rule_version = "CostCategoryExpression.v1"
+# Note: Cost allocation by service is handled through resource tags (Service=xxx)
+# Use AWS Cost Explorer with tag filters to view per-service costs
 
-  rule {
-    value = "api-gateway"
-    rule {
-      dimension {
-        key           = "TAG"
-        values        = ["api-gateway"]
-        match_options = ["CONTAINS"]
-      }
-    }
-  }
-
-  rule {
-    value = "user-service"
-    rule {
-      dimension {
-        key           = "TAG"
-        values        = ["user-service"]
-        match_options = ["CONTAINS"]
-      }
-    }
-  }
-
-  rule {
-    value = "trip-service"
-    rule {
-      dimension {
-        key           = "TAG"
-        values        = ["trip-service"]
-        match_options = ["CONTAINS"]
-      }
-    }
-  }
-
-  rule {
-    value = "driver-service"
-    rule {
-      dimension {
-        key           = "TAG"
-        values        = ["driver-service"]
-        match_options = ["CONTAINS"]
-      }
-    }
-  }
-
-  rule {
-    value = "notification-service"
-    rule {
-      dimension {
-        key           = "TAG"
-        values        = ["notification-service"]
-        match_options = ["CONTAINS"]
-      }
-    }
-  }
-
-  rule {
-    value = "infrastructure"
-    rule {
-      dimension {
-        key           = "TAG"
-        values        = ["vpc", "nat", "alb"]
-        match_options = ["CONTAINS"]
-      }
-    }
-  }
-
-  tags = local.tags
-}

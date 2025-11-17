@@ -1,0 +1,7 @@
+{
+  "Tags": {
+    "Key": "Project",
+    "Values": ["uit-go"],
+    "MatchOptions": ["EQUALS"]
+  }
+}

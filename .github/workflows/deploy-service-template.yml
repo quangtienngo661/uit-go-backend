@@ -1,0 +1,406 @@
+name: Deploy Service (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      service-name:
+        description: 'Service name (e.g., user, trip, driver)'
+        required: true
+        type: string
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: string
+        default: 'dev'
+      tf-apply:
+        description: 'Apply Terraform changes (true/false)'
+        required: false
+        type: boolean
+        default: false
+      run-migrations:
+        description: 'Run database migrations'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      ECR_REGISTRY:
+        required: false
+      INFRACOST_API_KEY:
+        required: false
+      SLACK_WEBHOOK_URL:
+        required: false
+
+env:
+  AWS_REGION: ap-southeast-1
+  SERVICE_NAME: ${{ inputs.service-name }}
+  ENVIRONMENT: ${{ inputs.environment }}
+
+jobs:
+  cost-estimate:
+    name: 💰 Estimate Infrastructure Cost
+    runs-on: ubuntu-latest
+    if: ${{ secrets.INFRACOST_API_KEY != '' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+      
+      - name: Generate cost estimate
+        run: |
+          cd infra
+          infracost breakdown \
+            --path=. \
+            --terraform-var="env=${{ inputs.environment }}" \
+            --format=json \
+            --out-file=/tmp/infracost.json
+      
+      - name: Post cost comment to PR
+        if: github.event_name == 'pull_request'
+        uses: infracost/actions/comment@v2
+        with:
+          path: /tmp/infracost.json
+          behavior: update
+      
+      - name: Upload cost estimate
+        uses: actions/upload-artifact@v4
+        with:
+          name: cost-estimate-${{ inputs.service-name }}
+          path: /tmp/infracost.json
+  
+  build-and-push:
+    name: 🐳 Build & Push Docker Image
+    runs-on: ubuntu-latest
+    outputs:
+      image-uri: ${{ steps.build.outputs.image }}
+      image-tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      
+      - name: Create ECR repository if not exists
+        continue-on-error: true
+        run: |
+          aws ecr describe-repositories --repository-names uit-go-${{ inputs.service-name }} || \
+          aws ecr create-repository \
+            --repository-name uit-go-${{ inputs.service-name }} \
+            --image-scanning-configuration scanOnPush=true \
+            --tags Key=Project,Value=uit-go Key=Service,Value=${{ inputs.service-name }} Key=ManagedBy,Value=GitHub-Actions
+      
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.login-ecr.outputs.registry }}/uit-go-${{ inputs.service-name }}
+          tags: |
+            type=sha,prefix=${{ inputs.environment }}-
+            type=raw,value=${{ inputs.environment }}-latest
+            type=raw,value=latest,enable=${{ inputs.environment == 'prod' }}
+      
+      - name: Build and push Docker image
+        id: build
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: uit-go-${{ inputs.service-name }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build image with labels for cost tracking
+          docker build \
+            --build-arg APP_NAME=${{ inputs.service-name }} \
+            --label "Service=${{ inputs.service-name }}" \
+            --label "Environment=${{ inputs.environment }}" \
+            --label "CommitSHA=${{ github.sha }}" \
+            --label "ManagedBy=GitHub-Actions" \
+            --label "Project=uit-go" \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ inputs.environment }}-latest \
+            -f apps/${{ inputs.service-name }}/Dockerfile \
+            .
+          
+          # Push images
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ inputs.environment }}-latest
+          
+          # Output full image URI
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+      
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.build.outputs.image }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+  
+  terraform-plan:
+    name: 📋 Terraform Plan
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Terraform Init
+        working-directory: infra
+        run: terraform init
+      
+      - name: Terraform Validate
+        working-directory: infra
+        run: terraform validate
+      
+      - name: Terraform Plan
+        working-directory: infra
+        run: |
+          terraform plan \
+            -var="env=${{ inputs.environment }}" \
+            -var="container_image_map={\"${{ inputs.service-name }}\"=\"${{ needs.build-and-push.outputs.image-uri }}\"}" \
+            -out=tfplan
+      
+      - name: Upload Terraform plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ inputs.service-name }}-${{ inputs.environment }}
+          path: infra/tfplan
+  
+  terraform-apply:
+    name: 🚀 Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: [build-and-push, terraform-plan]
+    if: ${{ inputs.tf-apply == true }}
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ steps.outputs.outputs.alb_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Download Terraform plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ inputs.service-name }}-${{ inputs.environment }}
+          path: infra
+      
+      - name: Terraform Apply
+        working-directory: infra
+        run: |
+          terraform init
+          terraform apply -auto-approve tfplan
+      
+      - name: Get Terraform outputs
+        id: outputs
+        working-directory: infra
+        run: |
+          ALB_DNS=$(terraform output -raw alb_dns_name || echo "")
+          echo "alb_url=http://$ALB_DNS" >> $GITHUB_OUTPUT
+  
+  migrate-database:
+    name: 🗄️ Run Database Migrations
+    runs-on: ubuntu-latest
+    needs: terraform-apply
+    if: ${{ inputs.run-migrations == true && contains(fromJSON('["user-service", "trip-service", "driver-service"]'), inputs.service-name) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Get RDS endpoint from Terraform
+        id: rds
+        working-directory: infra
+        run: |
+          terraform init
+          DB_KEY="${{ inputs.service-name }}"
+          DB_KEY="${DB_KEY//-service/}"
+          ENDPOINT=$(terraform output -raw ${DB_KEY}db_address || echo "")
+          echo "endpoint=$ENDPOINT" >> $GITHUB_OUTPUT
+      
+      - name: Run database migrations
+        env:
+          DB_HOST: ${{ steps.rds.outputs.endpoint }}
+        run: |
+          SERVICE="${{ inputs.service-name }}"
+          SERVICE="${SERVICE//-service/}"
+          npm run migration:run:${SERVICE}
+  
+  deploy-ecs:
+    name: 🎯 Update ECS Service
+    runs-on: ubuntu-latest
+    needs: [build-and-push, terraform-apply]
+    if: always() && (needs.terraform-apply.result == 'success' || needs.terraform-apply.result == 'skipped')
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Update ECS service
+        run: |
+          aws ecs update-service \
+            --cluster uit-go-${{ inputs.environment }}-ecs \
+            --service uit-go-${{ inputs.environment }}-${{ inputs.service-name }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }} || echo "Service not found or already updating"
+      
+      - name: Wait for deployment stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster uit-go-${{ inputs.environment }}-ecs \
+            --services uit-go-${{ inputs.environment }}-${{ inputs.service-name }} \
+            --region ${{ env.AWS_REGION }} || echo "Wait timed out or service not stable yet"
+  
+  health-check:
+    name: ✅ Health Check
+    runs-on: ubuntu-latest
+    needs: deploy-ecs
+    if: always() && needs.deploy-ecs.result == 'success'
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Get ALB DNS
+        id: alb
+        run: |
+          DNS=$(aws elbv2 describe-load-balancers \
+            --names uit-go-${{ inputs.environment }}-alb \
+            --query 'LoadBalancers[0].DNSName' \
+            --output text 2>/dev/null || echo "")
+          echo "dns=$DNS" >> $GITHUB_OUTPUT
+      
+      - name: Test service health
+        if: steps.alb.outputs.dns != ''
+        run: |
+          for i in {1..10}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              http://${{ steps.alb.outputs.dns }}/health || echo "000")
+            
+            if [ "$HTTP_CODE" -eq 200 ]; then
+              echo "✅ Service is healthy!"
+              exit 0
+            fi
+            
+            echo "⏳ Waiting for service (attempt $i/10, got HTTP $HTTP_CODE)..."
+            sleep 30
+          done
+          
+          echo "⚠️ Health check inconclusive"
+  
+  notify:
+    name: 📊 Send Notification
+    runs-on: ubuntu-latest
+    needs: [build-and-push, terraform-apply, deploy-ecs, health-check]
+    if: always()
+    steps:
+      - name: Determine status
+        id: status
+        run: |
+          if [ "${{ needs.health-check.result }}" == "success" ]; then
+            echo "status=✅ Success" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.health-check.result }}" == "failure" ]; then
+            echo "status=❌ Failed" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          else
+            echo "status=⚠️ Partial" >> $GITHUB_OUTPUT
+            echo "color=warning" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Send CloudWatch metric
+        if: always()
+        run: |
+          aws cloudwatch put-metric-data \
+            --namespace "UIT-GO/Deployments" \
+            --metric-name "DeploymentAttempt" \
+            --value 1 \
+            --dimensions Service=${{ inputs.service-name }},Environment=${{ inputs.environment }},Status=${{ steps.status.outputs.status }} \
+            --timestamp $(date -u +%Y-%m-%dT%H:%M:%S)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+      
+      - name: Notify Slack
+        if: always() && secrets.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "${{ steps.status.outputs.status }}: Deployment of ${{ inputs.service-name }} to ${{ inputs.environment }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Deployment Summary*\n*Service:* ${{ inputs.service-name }}\n*Environment:* ${{ inputs.environment }}\n*Commit:* ${{ github.sha }}\n*Status:* ${{ steps.status.outputs.status }}\n*Triggered by:* ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

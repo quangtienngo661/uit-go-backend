@@ -1,0 +1,41 @@
+name: Deploy Driver Service
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'apps/driver/**'
+      - 'libs/shared/**'
+      - 'infra/**'
+      - '.github/workflows/deploy-driver-service.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+        default: dev
+      apply-terraform:
+        description: 'Apply Terraform changes?'
+        required: true
+        type: boolean
+        default: false
+      run-migrations:
+        description: 'Run database migrations?'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy-service-template.yml
+    with:
+      service-name: driver-service
+      environment: ${{ inputs.environment || 'dev' }}
+      tf-apply: ${{ inputs.apply-terraform || github.ref == 'refs/heads/main' }}
+      run-migrations: ${{ inputs.run-migrations || true }}
+    secrets: inherit

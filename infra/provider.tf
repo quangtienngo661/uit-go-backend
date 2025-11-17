@@ -3,7 +3,7 @@ terraform {
   required_providers {
     aws = { source = "hashicorp/aws", version = "~> 5.60" }
     random = { source = "hashicorp/random", version = "~> 3.6" }
-    rabbitmq = { source = "cyrilgdn/rabbitmq", version = "~> 1.14" }
+    rabbitmq = { source = "cyrilgdn/rabbitmq", version = "~> 1.8" }
   }
 }
 

@@ -1,0 +1,39 @@
+version: 0.1
+
+projects:
+  - path: infra
+    name: UIT-GO Infrastructure (Dev)
+    
+    # Terraform variables
+    terraform_var_files:
+      - terraform.tfvars
+    
+    # Default region
+    env:
+      AWS_REGION: ap-southeast-1
+    
+    # Cost policies
+    usage:
+      # ECS Fargate usage assumptions
+      aws_ecs_service:
+        - resource_type: aws_ecs_service
+          cost_component: Requests
+          value: 2160  # 30 days * 24 hours * 3 tasks average
+      
+      # RDS usage assumptions
+      aws_db_instance:
+        - resource_type: aws_db_instance
+          cost_component: Storage
+          value: 20  # 20 GB per instance
+      
+      # ElastiCache usage assumptions
+      aws_elasticache_cluster:
+        - resource_type: aws_elasticache_cluster
+          cost_component: Cache nodes
+          value: 730  # 30.4 days * 24 hours
+
+# Currency
+currency: USD
+
+# Enable cloud pricing API
+enable_cloud: true
