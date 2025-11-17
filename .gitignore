@@ -51,3 +51,5 @@ Thumbs.db
 
 # docker dev
 docker-compose-dev.yml
+
+infra/.terraform
