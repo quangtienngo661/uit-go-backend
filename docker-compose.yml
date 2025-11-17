@@ -149,7 +149,7 @@ services:
       TRIPDB_DATABASE: ${TRIPDB_DATABASE}
       PORT: ${TRIP_SERVICE_PORT}
     expose: ['${TRIP_SERVICE_PORT}']
-    depends_on: [trip-db]
+    depends_on: [trip-db, rabbitmq]
 
   driver-service:
     build:
@@ -165,7 +165,7 @@ services:
       REDIS_PORT: 6379
       PORT: ${DRIVER_SERVICE_PORT}
     expose: ['${DRIVER_SERVICE_PORT}']
-    depends_on: [redis]
+    depends_on: [redis, rabbitmq, driver-db]
 
   notification-service:
     build:

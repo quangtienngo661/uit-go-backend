@@ -16,7 +16,7 @@ async function bootstrap() {
     {
       transport: Transport.GRPC,
       options: {
-        url: '0.0.0.0:3003',
+        url: 'trip-service:3003',
         package: tripPackage.TRIP_PACKAGE_PACKAGE_NAME,
         protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/trip.proto')
       }
@@ -27,7 +27,7 @@ async function bootstrap() {
     {
       transport: Transport.RMQ,
       options: {
-        urls: ['amqp://guest:guest@localhost:5672'],
+        urls: ['amqp://guest:guest@rabbitmq:5672'],
         queue: 'trip.q',
         queueOptions: {
           durable: true
