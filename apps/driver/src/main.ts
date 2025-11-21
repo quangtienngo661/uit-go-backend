@@ -6,8 +6,8 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { join } from 'path'; ``
+import { Transport } from '@nestjs/microservices';
+import { join } from 'path'; 
 import { driverPackage } from '@uit-go-backend/shared';
 
 async function bootstrap() {
@@ -38,7 +38,7 @@ async function bootstrap() {
 
   const port = process.env.DRIVER_SERVICE_PORT || 3004;
   app.startAllMicroservices();
-  await app.listen(port);
+  // await app.listen(port);
   Logger.log(
     `🚀 Driver Service is running with gRPC port ${port}`
   );
