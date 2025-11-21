@@ -8,9 +8,8 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "webpack-cli build",
-        "args": ["--node-env=production"],
-        "cwd": "apps/auth"
+        "command": "cd apps/auth && webpack-cli build",
+        "args": ["--node-env=production"]
       },
       "configurations": {
         "development": {

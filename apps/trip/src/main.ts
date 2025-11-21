@@ -38,7 +38,7 @@ async function bootstrap() {
   
   const port = process.env.TRIP_SERVICE_PORT || 3003;
   app.startAllMicroservices();
-  await app.listen(port);
+  // await app.listen(port);
   // await rmqApp.listen();
   Logger.log(
     `🚀 Trip Service is running with gRPC port ${port}`

@@ -1,0 +1,53 @@
+# Node modules
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist
+tmp
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Tests
+coverage
+*.spec.ts
+**/test/**
+**/*.test.ts
+
+# Documentation
+docs
+*.md
+!README.md
+
+# OSRM data (large files)
+osrm
+*.osm.pbf
+*.osrm
+*.osrm.*
+
+# Learning notes
+LEARNING
+
+# Environment files (will be mounted as volumes)
+.env
+.env.*
+
+# Docker
+docker-compose*.yml
+Dockerfile
+.dockerignore
