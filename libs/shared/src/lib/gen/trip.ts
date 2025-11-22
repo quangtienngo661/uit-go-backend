@@ -98,6 +98,7 @@ export interface CreateTripRequest {
   distanceKm: number;
   /** optional */
   estimatedPrice: number;
+  routeGeometry: string;
 }
 
 export interface CreateTripResponse {

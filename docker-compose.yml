@@ -185,6 +185,16 @@ services:
     depends_on:
       - rabbitmq
 
+  osrm-backend:
+    image: osrm/osrm-backend
+    container_name: osrm
+    command: osrm-routed --algorithm mld /data/vietnam-251119.osrm
+    volumes:
+      - ./osrm:/data
+    ports:
+      - "5050:5000"
+    restart: always
+
 volumes:
   userdb_data:
   tripdb_data:

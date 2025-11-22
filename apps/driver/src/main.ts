@@ -17,7 +17,7 @@ async function bootstrap() {
       transport: Transport.GRPC,
       options: {
         package: driverPackage.DRIVER_PACKAGE_PACKAGE_NAME,
-        url: 'driver-service:3004',
+        url: '0.0.0.0:3004',
         protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/driver.proto')
       }
     }

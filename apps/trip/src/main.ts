@@ -16,7 +16,7 @@ async function bootstrap() {
     {
       transport: Transport.GRPC,
       options: {
-        url: 'trip-service:3003',
+        url: '0.0.0.0:3003',
         package: tripPackage.TRIP_PACKAGE_PACKAGE_NAME,
         protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/trip.proto')
       }
