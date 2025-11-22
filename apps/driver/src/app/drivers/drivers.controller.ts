@@ -28,6 +28,10 @@ export class DriversController implements driverPackage.DriverServiceController 
     return this.driversService.acceptTrip(request)
   };
 
+  async rejectTrip(request: driverPackage.RejectTripRequest): Promise<driverPackage.RejectTripResponse> {
+    return this.driversService.rejectTrip(request.driverId, request.tripId);
+  }
+
   // @MessagePattern('createDriver')
   // create(@Payload() createDriverDto: CreateDriverDto) {
   //   return this.driversService.create(createDriverDto);
