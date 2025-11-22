@@ -8,6 +8,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { tripPackage } from '@uit-go-backend/shared';
 import { join } from 'path';
 import { TripsListener } from '../rmqService/trips.listener';
+import { RoutingService } from '../routing/routing.service';
 // import { RmqService } from '../rmqService/rmq.service';
 
 @Module({
@@ -18,7 +19,7 @@ import { TripsListener } from '../rmqService/trips.listener';
         name: 'DRIVER_SERVICE_RMQ',
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://guest:guest@localhost:5672'],
+          urls: ['amqp://guest:guest@rabbitmq:5672'],
           queue: 'driver.q',
           queueOptions: {
             durable: true,
@@ -31,7 +32,7 @@ import { TripsListener } from '../rmqService/trips.listener';
         name: 'NOTIFICATION_SERVICE_RMQ',
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://guest:guest@localhost:5672'],
+          urls: ['amqp://guest:guest@rabbitmq:5672'],
           queue: 'notif.q',
           queueOptions: {
             durable: true
@@ -43,13 +44,13 @@ import { TripsListener } from '../rmqService/trips.listener';
         transport: Transport.TCP,
         options: {
           // host: process.env.USER_SERVICE_HOST || 'user-service',
-          host: process.env.USER_SERVICE_HOST || '0.0.0.0',
+          host: 'user-service',
           port: parseInt(process.env.USER_SERVICE_PORT || '3002'),
         }
       }
     ]),
   ],
   controllers: [TripsController, TripsListener],
-  providers: [TripsService],
+  providers: [TripsService, RoutingService],
 })
 export class TripsModule { }

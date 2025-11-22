@@ -71,6 +71,13 @@ export class Trip {
   @Column({ name: 'final_price', type: 'decimal', precision: 10, scale: 2, nullable: true })
   finalPrice: number;
 
+  // Routing Details
+  @Column({ name: 'estimated_duration', type: 'decimal', precision: 10, scale: 2, nullable: true })
+  estimatedDuration: number; // in seconds
+
+  @Column({ name: 'route_geometry', type: 'jsonb', nullable: true })
+  routeGeometry: any; // GeoJSON LineString
+
   // Cancellation
   @Column({
     name: 'cancelled_by',

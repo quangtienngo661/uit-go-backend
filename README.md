@@ -103,6 +103,9 @@ UIT-Go follows a **microservices cloud-native pattern** with the following servi
 - **gRPC** - High-performance inter-service communication (Trip ↔ Driver)
 - **REST** - Public API and general inter-service communication
 
+### Routing & Navigation
+- **OSRM** - Open Source Routing Machine for route calculation and navigation
+
 ### Infrastructure
 - **Docker & Docker Compose** - Containerization
 - **Terraform** - Infrastructure as Code (IaC) - beta version
@@ -228,6 +231,43 @@ MAIL_PASS=your-app-password
    - `SUPABASE_KEY` (anon/public key)
    - `SUPABASE_JWT_SECRET` from **Settings > API > JWT Settings**
 
+### 5. Setup OSRM (Routing Engine)
+
+OSRM provides route calculation for the trip service.
+
+**Option A: Download Pre-processed Data (Recommended - 2 minutes)** ⚡
+
+Download pre-processed OSRM data to skip 5-10 minutes processing:
+
+1. **Download:** [OSRM Vietnam Data (~400MB)](GOOGLE_DRIVE_LINK_HERE)
+2. **Extract:** Unzip to `osrm/` folder in project root
+3. **Start:** `docker compose up -d osrm-backend`
+4. **Test:** `curl "http://localhost:5050/route/v1/driving/106.66,10.76;106.70,10.77"`
+
+> **Note:** Ask team maintainer for the Google Drive link if not available.
+
+**Option B: Process from Scratch (5-10 minutes)**
+
+Run the automated setup script:
+
+**Windows:**
+```powershell
+.\scripts\setup-osrm.ps1
+```
+
+**Linux/Mac:**
+```bash
+chmod +x scripts/setup-osrm.sh
+./scripts/setup-osrm.sh
+```
+
+The script will:
+1. Download Vietnam OSM data (~316 MB)
+2. Process the data (extract, partition, customize)
+3. Start OSRM server at http://localhost:5050
+
+**See [OSRM-QUICK-START.md](./docs/OSRM-QUICK-START.md) for detailed instructions.**
+
 ---
 
 ## 🏃 Running the Application
@@ -248,11 +288,13 @@ This will start:
 - ✅ 3x PostgreSQL databases (ports 5433, 5434, 5435)
 - ✅ Redis (port 6379)
 - ✅ RabbitMQ (port 5672, management UI on 15672)
+- ✅ OSRM routing engine (port 5050)
 - ✅ All 6 microservices
 
 **Access Points:**
 - API Gateway: http://localhost:3000
 - RabbitMQ Management: http://localhost:15672 (admin/admin123)
+- OSRM API: http://localhost:5050
 
 ### Method 2: Local Development (Individual Services)
 

@@ -14,7 +14,7 @@ import { DriversListener } from '../listeners/drivers.listener';
         name: 'TRIP_SERVICE_RMQ', 
         transport: Transport.RMQ, 
         options: {
-          urls: ['amqp://guest:guest@localhost:5672'], 
+          urls: ['amqp://guest:guest@rabbitmq:5672'], 
           queue: 'trip.q', 
           queueOptions: {
             durable: true
@@ -24,7 +24,7 @@ import { DriversListener } from '../listeners/drivers.listener';
         name: 'NOTIFICATION_SERVICE_RMQ', 
         transport: Transport.RMQ, 
         options: {
-          urls: ['amqp://guest:guest@localhost:5672'], 
+          urls: ['amqp://guest:guest@rabbitmq:5672'], 
           queue: 'notif.q', 
           queueOptions: {
             durable: true

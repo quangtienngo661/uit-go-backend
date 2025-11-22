@@ -53,3 +53,6 @@ Thumbs.db
 docker-compose-dev.yml
 
 infra/.terraform
+
+osrm
+LEARNING

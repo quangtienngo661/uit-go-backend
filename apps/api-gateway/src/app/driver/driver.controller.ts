@@ -2,7 +2,7 @@ import { Body, Controller, Get, Inject, OnModuleInit, Param, Patch, Post, Query 
 import { DriverService } from './driver.service';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 import { ClientGrpc } from '@nestjs/microservices';
-import { driverPackage } from '@uit-go-backend/shared';
+import { driverPackage, createDriverStatusWrapper, DriverStatus } from '@uit-go-backend/shared';
 import { firstValueFrom } from 'rxjs';
 import { UpdateDriverLocationDto } from './dto/update-driver-location.dto';
 
@@ -32,15 +32,27 @@ export class DriverController implements OnModuleInit {
 
   @Patch(':driverId/status')
   updateDriverStatus(@Param('driverId') driverId: string, @Body() updateDriverDto: UpdateDriverDto) {
-    // TODO: consider importing driver status input by text, for example, 'online'
+    // Convert proto enum to entity enum and create wrapper
+    const entityStatus = this.protoStatusToEntity(updateDriverDto.status);
+    
     return firstValueFrom(
       this.driverServiceClient.updateStatus(
         {
           driverId: driverId,
-          status: updateDriverDto.status
+          status: createDriverStatusWrapper(entityStatus)
         }
       )
     )
+  }
+
+  // Helper to convert proto status to entity status
+  private protoStatusToEntity(protoStatus: any): DriverStatus {
+    switch (protoStatus) {
+      case 1: return DriverStatus.OFFLINE;
+      case 2: return DriverStatus.ONLINE;
+      case 3: return DriverStatus.BUSY;
+      default: return DriverStatus.OFFLINE;
+    }
   }
 
   @Get('search')
@@ -66,5 +78,16 @@ export class DriverController implements OnModuleInit {
     return this.driverServiceClient.acceptTrip(request);
 
     // return request
+  }
+
+  @Post(':driverId/reject-trip')
+  rejectTrip(
+    @Param('driverId') driverId: string,
+    @Body() body: { tripId: string }
+  ) {
+    return this.driverServiceClient.rejectTrip({ 
+      driverId, 
+      tripId: body.tripId 
+    });
   }
 }
