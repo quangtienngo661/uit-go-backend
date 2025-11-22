@@ -1,6 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { driverPackage, DriverStatus, protoToEntityDriverStatus, entityToProtoDriverStatus, mock_emails } from '@uit-go-backend/shared';
+import { driverPackage, DriverStatus, protoToEntityDriverStatus, createDriverStatusWrapper, mock_emails } from '@uit-go-backend/shared';
 import { Repository } from 'typeorm';
 import { Driver } from './entities/driver.entity';
 import { REDIS_CLIENT } from '@uit-go-backend/shared';
@@ -23,7 +23,7 @@ export class DriversService {
 
   async updateStatus(request: driverPackage.UpdateStatusRequest): Promise<driverPackage.UpdateStatusResponse> {
     const { driverId, status } = request;
-    const convertedStatus = protoToEntityDriverStatus(status);
+    const convertedStatus = protoToEntityDriverStatus(status.statusId);
 
     let driver = await this.driverRepo.findOneBy({ id: driverId });
 
@@ -39,7 +39,7 @@ export class DriversService {
       id: savedDriver.id,
       data: {
         id: savedDriver.id,
-        status,
+        status: createDriverStatusWrapper(savedDriver.status),
         currentLat: savedDriver.currentLat,
         currentLng: savedDriver.currentLng,
         currentTripId: savedDriver.currentTripId,
@@ -57,11 +57,12 @@ export class DriversService {
     }
 
     if (driver.status === DriverStatus.ONLINE || driver.status === DriverStatus.BUSY) {
-      console.log(driver)
       const result = await this.redisClient.geoadd(DRIVER_GEO_KEY, lng, lat, driverId);
-      console.log(result)
+      // add a new driver location with geo key and driverId, use geopos to get location later
     }
-    return {}
+    return {
+      "msg": "Location updated in redis successfully"
+    }
   };
 
   async findNearbyDrivers(request: driverPackage.FindNearbyDriversRequest): Promise<driverPackage.FindNearbyDriversResponse> {
@@ -78,7 +79,14 @@ export class DriversService {
       'COUNT', 10
     )
 
-    const nearbyDriversProto = geoResults.map(data => {
+    const nearbyDriversProto = geoResults.map(async data => {
+      const existingDriver = await this.driverRepo.findOneBy({ id: data[0] });
+      if (!existingDriver) {
+        // Remove non-existing driver from Redis
+        await this.redisClient.zrem(DRIVER_GEO_KEY, data[0]);
+        return null;
+      }
+      
       const result = {
         driverId: data[0],
         distance: parseFloat(data[1]),
@@ -90,8 +98,10 @@ export class DriversService {
 
       return result;
     })
+
+    const filteredDrivers = (await Promise.all(nearbyDriversProto)).filter(driver => driver !== null);
     const response: driverPackage.FindNearbyDriversResponse = {
-      drivers: nearbyDriversProto
+      drivers: filteredDrivers
     }
 
     return response;
@@ -106,12 +116,16 @@ export class DriversService {
       throw new NotFoundException('Driver not found')
     }
 
+    // TODO: use geopos to get driver current location as when a driver is online or busy, 
+    // the location is stored in redis continually until goes offline
+    const geoPos = await this.redisClient.geopos(DRIVER_GEO_KEY, driverId);
+
     const response = {
       data: {
         id: driver.id,
-        status: entityToProtoDriverStatus(driver.status),
-        currentLat: driver.currentLat,
-        currentLng: driver.currentLng,
+        status: createDriverStatusWrapper(driver.status),
+        currentLat: geoPos[0] ? parseFloat(geoPos[0][1]) : driver.currentLat,
+        currentLng: geoPos[0] ? parseFloat(geoPos[0][0]) : driver.currentLng,
         currentTripId: driver.currentTripId
       }
     }
@@ -127,20 +141,23 @@ export class DriversService {
       throw new NotFoundException('Driver not found');
     }
 
+    if (driver.status !== DriverStatus.ONLINE) {
+      throw new Error('Driver is not available to accept the trip');
+    }
+
+    const geoPos = await this.redisClient.geopos(DRIVER_GEO_KEY, driverId);
+
     driver.status = DriverStatus.BUSY;
+    driver.currentTripId = tripId;
     await this.driverRepo.save(driver);
     this.tripRmqClient.emit('driver.accepted', { tripId, driverId })
-    // TODO: get email by userId
-    // this.notifRmqClient.emit('driver.accepted', { email: mock_emails.userEmail })
-
-    // Send message to Trip Driver that the trip is accepted
 
     const response = {
       data: {
         id: driver.id,
-        status: entityToProtoDriverStatus(driver.status),
-        currentLat: driver.currentLat,
-        currentLng: driver.currentLng,
+        status: createDriverStatusWrapper(driver.status),
+        currentLat: geoPos[0] ? parseFloat(geoPos[0][1]) : driver.currentLat,
+        currentLng: geoPos[0] ? parseFloat(geoPos[0][0]) : driver.currentLng,
         currentTripId: driver.currentTripId
       }
     }
@@ -148,7 +165,26 @@ export class DriversService {
     return response;
   };
 
-  // RMQ Handler
+  async rejectTrip(driverId: string, tripId: string) {
+    const driver = await this.driverRepo.findOneBy({ id: driverId });
+    if (!driver) {
+      throw new NotFoundException('Driver not found');
+    }
+
+    if (driver.status !== DriverStatus.ONLINE) {
+      throw new Error('Driver is not available to reject the trip');
+    }
+
+    // Emit RabbitMQ message to trip service
+    this.tripRmqClient.emit('driver.rejected', { tripId, driverId });
+
+    return {
+      success: true,
+      message: 'Trip rejected successfully'
+    };
+  }
+
+  // ====== RMQ Handler ======
   async handleTripCreated(data: any) {
     const request = {
       lng: data.pickupLng,
@@ -160,11 +196,28 @@ export class DriversService {
     data.potentialDrivers = [...nearbyDrivers.drivers];
 
     this.tripRmqClient.emit('invite.driver', data)
-
-    // console.log(data)
-    // send invite to driver respectively if a driver rejects
-
   }
 
-  // Note: add publish trip.cancelled for trip.q
+  async handleTripCancelled(data: any) {
+    const { driverId } = data;
+    const driver = await this.driverRepo.findOneBy({ id: driverId });
+    if (!driver) {
+      throw new NotFoundException('Driver not found');
+    }
+    driver.status = DriverStatus.ONLINE;
+    await this.driverRepo.save(driver);
+  }
+
+  async handleTripCompleted(data: any) {
+    const { driverId } = data;
+    const driver = await this.driverRepo.findOneBy({ id: driverId });
+
+    if (!driver) {
+      throw new NotFoundException('Driver not found');
+    }
+    
+    driver.status = DriverStatus.ONLINE;
+    driver.currentTripId = null;
+    await this.driverRepo.save(driver);
+  }
 }

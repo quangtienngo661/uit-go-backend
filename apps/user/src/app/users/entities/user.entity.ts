@@ -13,8 +13,8 @@ export class User {
   @Column({ name: 'email', type: 'varchar', length: 255, unique: true, nullable: false })
   email: string;
 
-  @Column({ name: 'password_hash', type: 'varchar', length: 255, nullable: true, select: false })
-  passwordHash: string;
+  @Column({ name: 'password', type: 'varchar', length: 255, nullable: true, select: false })
+  password: string;
 
   // Profile
   @Column({ name: 'full_name', type: 'varchar', length: 255, nullable: false })

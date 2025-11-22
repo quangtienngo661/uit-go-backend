@@ -6,7 +6,6 @@ import { ConfigModule } from '@nestjs/config';
 import { configuration, driverConfigValidation } from './config/configuration';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { driverDbAsyncConfig } from './config/ormConfig';
-import { LocationsModule } from './locations/locations.module';
 import { RedisModule } from '@uit-go-backend/shared';
 
 @Module({
@@ -20,7 +19,6 @@ import { RedisModule } from '@uit-go-backend/shared';
       cache: true,
     }),
     TypeOrmModule.forRootAsync(driverDbAsyncConfig),
-    LocationsModule,
     RedisModule,
   ],
   controllers: [AppController],

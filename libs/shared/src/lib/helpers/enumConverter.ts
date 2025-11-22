@@ -37,6 +37,14 @@ export const entityToProtoDriverStatus = (entityStatus: DriverStatus): commonPac
   }
 };
 
+/** Helper function to create DriverStatusWrapper from entity status */
+export function createDriverStatusWrapper(entityStatus: DriverStatus) {
+  return {
+    statusId: entityToProtoDriverStatus(entityStatus),
+    status: entityStatus
+  };
+}
+
 
 /** VehicleType Proto -> DB (shared string) */
 export function vehicleTypeToDB(value: commonPackage.VehicleType): SharedVehicleType {
