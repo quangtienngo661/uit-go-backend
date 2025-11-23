@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Inject, OnModuleInit, Param, Patch, Post } from '@nestjs/common';
-import { tripPackage } from '@uit-go-backend/shared';
+import { success, tripPackage } from '@uit-go-backend/shared';
 import { ClientGrpc } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 @Controller('trips')
 export class TripController implements OnModuleInit {
@@ -18,19 +19,22 @@ export class TripController implements OnModuleInit {
   // ✅ Create Trip
   @Post()
   async createTrip(@Body() body: tripPackage.CreateTripRequest) {
-    return this.tripServiceClient.createTrip(body);
+    const result = await firstValueFrom(this.tripServiceClient.createTrip(body));
+    return success(result, 201, 'Trip created successfully');
   }
 
   // ✅ Get Trip by ID
   @Get(':tripId')
   async getTrip(@Param('tripId') tripId: string) {
-    return this.tripServiceClient.getTrip({ tripId });
+    const result = await firstValueFrom(this.tripServiceClient.getTrip({ tripId }));
+    return success(result, 200, 'Trip retrieved successfully');
   }
 
   // ✅ Cancel Trip
   @Patch(':tripId/cancel')
   async cancelTrip(@Param('tripId') tripId: string) {
-    return this.tripServiceClient.cancelTrip({ tripId });
+    const result = await firstValueFrom(this.tripServiceClient.cancelTrip({ tripId }));
+    return success(result, 200, 'Trip cancelled successfully');
   }
 
   // ✅ Assign Driver
@@ -39,22 +43,25 @@ export class TripController implements OnModuleInit {
     @Param('tripId') tripId: string,
     @Body() body: { driverId: string },
   ) {
-    return this.tripServiceClient.assignDriver({
+    const result = this.tripServiceClient.assignDriver({
       tripId,
       driverId: body.driverId,
     });
+    return success(result, 200, 'Driver assigned successfully');
   }
 
   // ✅ Start Trip
   @Patch(':tripId/start')
   async startTrip(@Param('tripId') tripId: string) {
-    return this.tripServiceClient.startTrip({ tripId });
+    const result = await firstValueFrom(this.tripServiceClient.startTrip({ tripId }));
+    return success(result, 200, 'Trip started successfully');
   }
 
   // ✅ Complete Trip
   @Patch(':tripId/complete')
   async completeTrip(@Param('tripId') tripId: string) {
-    return this.tripServiceClient.completeTrip({ tripId });
+    const result = await firstValueFrom(this.tripServiceClient.completeTrip({ tripId }));
+    return success(result, 200, 'Trip completed successfully');
   }
 
   // ✅ Rate Trip
@@ -69,19 +76,21 @@ export class TripController implements OnModuleInit {
       comment?: string;
     },
   ) {
-    return this.tripServiceClient.rateTrip({
+    const result = await firstValueFrom(this.tripServiceClient.rateTrip({
       tripId,
       ratedBy: body.ratedBy,
       ratedUser: body.ratedUser,
       raterRole: body.raterRole,
       rating: body.rating,
       comment: body.comment ?? '',
-    });
+    }));
+    return success(result, 200, 'Trip rated successfully');
   }
 
   // ✅ Trip History (by user)
   @Get('user/:userId')
   async tripHistory(@Param('userId') userId: string) {
-    return this.tripServiceClient.tripHistory({ userId });
+    const result = await firstValueFrom(this.tripServiceClient.tripHistory({ userId }));
+    return success(result, 200, 'Trip history retrieved successfully');
   }
 }
