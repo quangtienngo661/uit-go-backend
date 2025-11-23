@@ -2,7 +2,7 @@ import { Body, Controller, Get, Inject, OnModuleInit, Param, Patch, Post, Query 
 import { DriverService } from './driver.service';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 import { ClientGrpc } from '@nestjs/microservices';
-import { driverPackage, createDriverStatusWrapper, DriverStatus } from '@uit-go-backend/shared';
+import { driverPackage, createDriverStatusWrapper, DriverStatus, success } from '@uit-go-backend/shared';
 import { firstValueFrom } from 'rxjs';
 import { UpdateDriverLocationDto } from './dto/update-driver-location.dto';
 
@@ -20,29 +20,33 @@ export class DriverController implements OnModuleInit {
   }
 
   @Patch(':driverId/location')
-  updateDriverLocation(@Param('driverId') driverId: string, @Body() updateDriverLocationDto: UpdateDriverLocationDto) {
-    return this.driverServiceClient.updateLocation(
-      {
-        driverId,
-        lng: updateDriverLocationDto.lng,
-        lat: updateDriverLocationDto.lat,
-      }
-    )
+  async updateDriverLocation(@Param('driverId') driverId: string, @Body() updateDriverLocationDto: UpdateDriverLocationDto) {
+    const result = await firstValueFrom(
+      this.driverServiceClient.updateLocation(
+        {
+          driverId,
+          lng: updateDriverLocationDto.lng,
+          lat: updateDriverLocationDto.lat,
+        }
+      )
+    );
+    return success(result, 200, 'Driver location updated successfully');
   }
 
   @Patch(':driverId/status')
-  updateDriverStatus(@Param('driverId') driverId: string, @Body() updateDriverDto: UpdateDriverDto) {
+  async updateDriverStatus(@Param('driverId') driverId: string, @Body() updateDriverDto: UpdateDriverDto) {
     // Convert proto enum to entity enum and create wrapper
     const entityStatus = this.protoStatusToEntity(updateDriverDto.status);
     
-    return firstValueFrom(
+    const result = await firstValueFrom(
       this.driverServiceClient.updateStatus(
         {
           driverId: driverId,
           status: createDriverStatusWrapper(entityStatus)
         }
       )
-    )
+    );
+    return success(result, 200, 'Driver status updated successfully');
   }
 
   // Helper to convert proto status to entity status
@@ -56,38 +60,41 @@ export class DriverController implements OnModuleInit {
   }
 
   @Get('search')
-  findNearbyDrivers(@Query() query) { // lat, lng, radius
-    return this.driverServiceClient.findNearbyDrivers(query);
+  async findNearbyDrivers(@Query() query) { // lat, lng, radius
+    const result = await firstValueFrom(this.driverServiceClient.findNearbyDrivers(query));
+    return success(result, 200, 'Nearby drivers retrieved successfully');
   }
 
   @Get(':driverId')
-  getDriverProfile(@Param('driverId') driverId: string) {
-    return firstValueFrom(this.driverServiceClient.getDriverProfile({ driverId }))
+  async getDriverProfile(@Param('driverId') driverId: string) {
+    const result = await firstValueFrom(this.driverServiceClient.getDriverProfile({ driverId }));
+    return success(result, 200, 'Driver profile retrieved successfully');
   }
 
   @Post(':driverId/accept-trip')
-  acceptTrip(
+  async acceptTrip(
     @Param('driverId') driverId: string,
     @Body() body: { tripId: string }
   ) {
     const request = {
       tripId: body.tripId, driverId
-    }
+    };
 
-    // console.log(request.tripId)S
-    return this.driverServiceClient.acceptTrip(request);
-
-    // return request
+    const result = await firstValueFrom(this.driverServiceClient.acceptTrip(request));
+    return success(result, 200, 'Trip accepted successfully');
   }
 
   @Post(':driverId/reject-trip')
-  rejectTrip(
+  async rejectTrip(
     @Param('driverId') driverId: string,
     @Body() body: { tripId: string }
   ) {
-    return this.driverServiceClient.rejectTrip({ 
-      driverId, 
-      tripId: body.tripId 
-    });
+    const result = await firstValueFrom(
+      this.driverServiceClient.rejectTrip({ 
+        driverId, 
+        tripId: body.tripId 
+      })
+    );
+    return success(result, 200, 'Trip rejected successfully');
   }
 }

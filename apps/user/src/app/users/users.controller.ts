@@ -44,6 +44,7 @@ export class UsersController {
 
   @MessagePattern({ cmd: 'getCurrentProfile' })
   getCurrentProfile(@Payload() userId: string) {
+    console.log('calling from trip service to get current profile');
     return this.usersService.getCurrentProfile(userId);
   }
 

@@ -27,6 +27,17 @@ export class TripsService {
   async createTrip(request: tripPackage.CreateTripRequest): Promise<tripPackage.CreateTripResponse> {
     const { passengerId, pickup, dropoff, vehicleType } = request;
 
+    const existingTrip = await this.tripRepo.findOne({
+      where: {
+        passengerId: passengerId,
+        tripStatus: TripStatus.SEARCHING,
+      },
+    });
+
+    if (existingTrip) {
+      throw new Error('There is already an ongoing trip for this passenger.');
+    }
+
     // Get route from OSRM (with fallback to Haversine)
     const routeData = await this.routingService.getRoute(
       pickup.lat,
@@ -104,22 +115,38 @@ export class TripsService {
       where: { id: tripId },
       relations: ['ratings'], // load quan hệ ratings
     });
+
     if (!trip) {
       throw new NotFoundException('Trip not found');
     }
 
-    const driver = await firstValueFrom(
-      this.userClient.send({ cmd: 'getCurrentProfile' }, trip.driverId)
+    const passenger = await firstValueFrom(
+      this.userClient.send({ cmd: 'getCurrentProfile' }, trip.passengerId)
     )
-    
-    if (!driver.email) 
-      this.notifRmqClient.emit('trip.cancelled', { driverEmail: driver.email })
 
-    trip.tripStatus = TripStatus.CANCELLED;
+    console.log("=====AFTER GETTING PASSENGER PROFILE=====");
+
+    if (!passenger) {
+      throw new NotFoundException('Passenger not found');
+    }
+
+    if (trip.tripStatus === TripStatus.SEARCHING || !trip.driverId) {
+      this.notifRmqClient.emit('trip.cancelled', { userEmail: passenger.email, isAuto: true })
+    } else {
+      const driver = await firstValueFrom(
+        this.userClient.send({ cmd: 'getCurrentProfile' }, trip.driverId)
+      )
+      if (!driver) {
+        throw new NotFoundException('Driver not found');
+      }
+
+      this.notifRmqClient.emit('trip.cancelled', { userEmail: passenger.email, driverEmail: driver.email, isAuto: false })
+      // this.notifRmqClient.emit('trip.cancelled', { driverEmail: driver.email })
+    }
+
     trip.cancelledAt = new Date((new Date()).getTime() + 7 * 60 * 60 * 1000);
+    trip.tripStatus = TripStatus.CANCELLED;
     const cancelledTrip = await this.tripRepo.save(trip);
-    console.log(cancelledTrip.ratings);
-
     return tripResponse(cancelledTrip);
   }
 
@@ -278,13 +305,9 @@ export class TripsService {
     }
 
     const nextDriver = remainingDrivers[0]; // use for getting email later
-    console.log(nextDriver)
     const driver = await firstValueFrom(
       this.userClient.send({ cmd: 'getCurrentProfile' }, nextDriver.driverId)
     )
-
-    if (!driver) {
-    }
 
     invitedTrip.potentialDrivers = remainingDrivers.splice(1);
     await this.tripRepo.save(invitedTrip);

@@ -71,10 +71,18 @@ export class NotificationListener {
   async handleTripCancelled(@Payload() data: any, @Ctx() context: RmqContext) {
     this.logger.log(`📩 Received trip.cancelled: ${JSON.stringify(data)}`);
 
-    await this.notificationService.sendEmailNotification(
-      data.driverEmail,
-      'Chuyến đi đã bị hủy',
-      'Hành khách đã hủy chuyến đi. Bạn có thể chờ chuyến mới.',
-    );
+    if (data.isAuto) {
+      await this.notificationService.sendEmailNotification(
+        data.userEmail,
+        'Chuyến đi đã bị hủy tự động',
+        'Chuyến đi của bạn đã bị hủy do không có tài xế nhận chuyến. Vui lòng thử đặt chuyến lại.',
+      );
+    } else {
+      await this.notificationService.sendEmailNotification(
+        data.driverEmail,
+        'Chuyến đi đã bị hủy',
+        'Hành khách đã hủy chuyến đi. Bạn có thể chờ chuyến mới.',
+      );
+    }
   }
 }
