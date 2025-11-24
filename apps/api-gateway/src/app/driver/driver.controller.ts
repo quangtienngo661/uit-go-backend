@@ -1,12 +1,16 @@
-import { Body, Controller, Get, Inject, OnModuleInit, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Inject, OnModuleInit, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { DriverService } from './driver.service';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 import { ClientGrpc } from '@nestjs/microservices';
-import { driverPackage, createDriverStatusWrapper, DriverStatus, success } from '@uit-go-backend/shared';
+import { driverPackage, createDriverStatusWrapper, DriverStatus, Role, success } from '@uit-go-backend/shared';
 import { firstValueFrom } from 'rxjs';
 import { UpdateDriverLocationDto } from './dto/update-driver-location.dto';
+import { SupabaseGuard } from '../../guards/auth/supabase.guard';
+import { RolesGuard } from '../../guards/auth/roles.guard';
+import { Roles } from '../../decorators/roles.decorator';
 
 @Controller('drivers')
+@UseGuards(SupabaseGuard, RolesGuard)
 export class DriverController implements OnModuleInit {
   private driverServiceClient: driverPackage.DriverServiceClient
 
@@ -20,6 +24,7 @@ export class DriverController implements OnModuleInit {
   }
 
   @Patch(':driverId/location')
+  @Roles(Role.DRIVER)
   async updateDriverLocation(@Param('driverId') driverId: string, @Body() updateDriverLocationDto: UpdateDriverLocationDto) {
     const result = await firstValueFrom(
       this.driverServiceClient.updateLocation(
@@ -34,6 +39,7 @@ export class DriverController implements OnModuleInit {
   }
 
   @Patch(':driverId/status')
+  @Roles(Role.DRIVER)
   async updateDriverStatus(@Param('driverId') driverId: string, @Body() updateDriverDto: UpdateDriverDto) {
     // Convert proto enum to entity enum and create wrapper
     const entityStatus = this.protoStatusToEntity(updateDriverDto.status);
@@ -60,18 +66,21 @@ export class DriverController implements OnModuleInit {
   }
 
   @Get('search')
+  @Roles(Role.PASSENGER, Role.DRIVER)
   async findNearbyDrivers(@Query() query) { // lat, lng, radius
     const result = await firstValueFrom(this.driverServiceClient.findNearbyDrivers(query));
     return success(result, 200, 'Nearby drivers retrieved successfully');
   }
 
   @Get(':driverId')
+  @Roles(Role.PASSENGER, Role.DRIVER)
   async getDriverProfile(@Param('driverId') driverId: string) {
     const result = await firstValueFrom(this.driverServiceClient.getDriverProfile({ driverId }));
     return success(result, 200, 'Driver profile retrieved successfully');
   }
 
   @Post(':driverId/accept-trip')
+  @Roles(Role.DRIVER)
   async acceptTrip(
     @Param('driverId') driverId: string,
     @Body() body: { tripId: string }
@@ -85,6 +94,7 @@ export class DriverController implements OnModuleInit {
   }
 
   @Post(':driverId/reject-trip')
+  @Roles(Role.DRIVER)
   async rejectTrip(
     @Param('driverId') driverId: string,
     @Body() body: { tripId: string }
