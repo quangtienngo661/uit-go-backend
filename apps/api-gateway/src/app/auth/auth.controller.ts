@@ -1,7 +1,7 @@
 import { Controller, OnModuleInit, Post, Body, Get, UseGuards, Inject } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ClientGrpc } from '@nestjs/microservices';
-import { authPackage, mapVehicleTypeToProto, success } from '@uit-go-backend/shared';
+import { authPackage, mapVehicleTypeToProto, Role, success } from '@uit-go-backend/shared';
 import { LoginDto, RegisterUserDto, RegisterDriverDto } from './dto';
 import { firstValueFrom } from 'rxjs';
 import { SupabaseGuard } from '../../guards/auth/supabase.guard';
@@ -86,7 +86,7 @@ export class AuthController implements OnModuleInit {
   // for demo
   @Get('only-driver')
   @UseGuards(SupabaseGuard, RolesGuard)
-  @Roles('driver')
+  @Roles(Role.DRIVER)
   async onlyDriver(){
     return success(null, 200, "If you see this message, you are authenticated as a driver!");
   }
