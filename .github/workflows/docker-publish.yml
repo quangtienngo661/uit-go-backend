@@ -1,0 +1,42 @@
+name: Docker Publish
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, dev, deployment]
+    paths:
+      - "Dockerfile"
+      - ".github/workflows/docker-publish.yml"
+      - "apps/**/Dockerfile"
+      - "apps/**/.github/workflows/docker-publish.yml"
+      - "libs/**/Dockerfile"
+      - "libs/**/.github/workflows/docker-publish.yml"
+
+permissions:
+  contents: read
+  packages: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api-gateway, auth, user, trip, driver, notification]
+    name: Build and push ${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/uit-go-${{ matrix.service }}:latest
+            ghcr.io/${{ github.repository_owner }}/uit-go-${{ matrix.service }}:${{ github.sha }}
