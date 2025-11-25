@@ -4,6 +4,6 @@ import { Controller, Get } from '@nestjs/common';
 export class HealthController {
   @Get()
   ping() {
-    return { status: 'hungry', version: process.env.APP_VERSION ?? 'dev' };
+    return { status: 'ok', version: process.env.APP_VERSION ?? 'dev' };
   }
 }
