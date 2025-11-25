@@ -7,11 +7,13 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { Transport } from '@nestjs/microservices';
-import { join } from 'path'; 
+import { join } from 'path';
 import { driverPackage } from '@uit-go-backend/shared';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
   app.connectMicroservice(
     {
       transport: Transport.GRPC,
@@ -27,7 +29,7 @@ async function bootstrap() {
     {
       transport: Transport.RMQ,
       options: {
-        urls: ['amqp://guest:guest@rabbitmq:5672'],
+        urls: [configService.get('RABBITMQ_URL')],
         queue: 'driver.q',
         queueOptions: {
           durable: true
