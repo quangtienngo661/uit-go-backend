@@ -34,3 +34,12 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/uit-go-${{ matrix.service }}:latest
             ghcr.io/${{ github.repository_owner }}/uit-go-${{ matrix.service }}:${{ github.sha }}
+  trigger-render-deploy:
+    needs: publish
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && success()
+    steps:
+      - name: Trigger Render deploy hook
+        run: curl -X POST "$RENDER_DEPLOY_HOOK"
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
