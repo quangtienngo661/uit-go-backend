@@ -8,6 +8,7 @@ import { TripModule } from './trip/trip.module';
 import { UserModule } from './user/user.module';
 import { AuthCommonModule } from '../common/auth/auth-common.module';
 import { ConfigModule } from '@nestjs/config';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ConfigModule } from '@nestjs/config';
     NotificationModule,
     TripModule,
     UserModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
