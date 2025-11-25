@@ -1,12 +1,10 @@
 name: CI
 
 on:
-  [workflow_dispatch]
-  # push:
-  #   branches:
-  #     - master
-  #     - deployment
-  # pull_request:
+  workflow_dispatch:
+  push:
+    branches: [main, dev, deployment]
+  pull_request:
 
 permissions:
   actions: read
