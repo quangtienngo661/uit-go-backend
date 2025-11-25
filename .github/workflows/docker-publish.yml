@@ -3,13 +3,6 @@ on:
   workflow_dispatch:
   push:
     branches: [main, dev, deployment]
-    paths:
-      - "Dockerfile"
-      - ".github/workflows/docker-publish.yml"
-      - "apps/**/Dockerfile"
-      - "apps/**/.github/workflows/docker-publish.yml"
-      - "libs/**/Dockerfile"
-      - "libs/**/.github/workflows/docker-publish.yml"
 
 permissions:
   contents: read
