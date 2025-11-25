@@ -3,8 +3,16 @@ terraform {
   required_providers {
     aws = { source = "hashicorp/aws", version = "~> 5.60" }
     random = { source = "hashicorp/random", version = "~> 3.6" }
-    rabbitmq = { source = "cyrilgdn/rabbitmq", version = "~> 1.14" }
+    rabbitmq = { source = "cyrilgdn/rabbitmq", version = "~> 1.0" }
   }
+  # To enable remote state, add an s3 backend block here after creating the bucket/table:
+  # backend "s3" {
+  #   bucket         = "<your-tf-state-bucket>"
+  #   key            = "uit-go/terraform.tfstate"
+  #   region         = "ap-southeast-1"
+  #   dynamodb_table = "<your-tf-locks-table>"
+  #   encrypt        = true
+  # }
 }
 
 

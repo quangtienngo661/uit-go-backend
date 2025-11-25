@@ -15,4 +15,9 @@ locals {
   namespace_domain = "local"
 
   tags = { Project = var.project, Env = var.env, Owner = "se360-uit-go" }
+
+  service_tags = {
+    for name, cfg in local.service_cfg :
+    name => merge(local.tags, { Service = name })
+  }
 }
