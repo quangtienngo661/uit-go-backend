@@ -12,7 +12,7 @@ import { tripPackage } from '@uit-go-backend/shared';
         name: tripPackage.TRIP_SERVICE_NAME,
         transport: Transport.GRPC,
         options: {
-          url: '0.0.0.0:3003',
+          url: 'trip-service:3003',
           package: tripPackage.TRIP_PACKAGE_PACKAGE_NAME,
           protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/trip.proto')
         }

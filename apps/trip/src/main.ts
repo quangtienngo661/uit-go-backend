@@ -9,9 +9,12 @@ import { AppModule } from './app/app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { tripPackage } from '@uit-go-backend/shared';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+
   app.connectMicroservice<MicroserviceOptions>(
     {
       transport: Transport.GRPC,
@@ -27,7 +30,7 @@ async function bootstrap() {
     {
       transport: Transport.RMQ,
       options: {
-        urls: ['amqp://guest:guest@localhost:5672'],
+        urls: [configService.get<string>('RABBITMQ_URL')],
         queue: 'trip.q',
         queueOptions: {
           durable: true
@@ -35,10 +38,10 @@ async function bootstrap() {
       }
     },
   );
-  
+
   const port = process.env.TRIP_SERVICE_PORT || 3003;
   app.startAllMicroservices();
-  await app.listen(port);
+  // await app.listen(port);
   // await rmqApp.listen();
   Logger.log(
     `🚀 Trip Service is running with gRPC port ${port}`

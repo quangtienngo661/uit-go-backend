@@ -1,8 +1,13 @@
-import { Body, Controller, Get, Inject, OnModuleInit, Param, Patch, Post } from '@nestjs/common';
-import { tripPackage } from '@uit-go-backend/shared';
+import { Body, Controller, Get, Inject, OnModuleInit, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Role, success, tripPackage } from '@uit-go-backend/shared';
 import { ClientGrpc } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
+import { SupabaseGuard } from '../../guards/auth/supabase.guard';
+import { RolesGuard } from '../../guards/auth/roles.guard';
+import { Roles } from '../../decorators/roles.decorator';
 
 @Controller('trips')
+@UseGuards(SupabaseGuard, RolesGuard)
 export class TripController implements OnModuleInit {
   private tripServiceClient: tripPackage.TripServiceClient;
 
@@ -15,50 +20,63 @@ export class TripController implements OnModuleInit {
     this.tripServiceClient = this.tripClient.getService<tripPackage.TripServiceClient>(tripPackage.TRIP_SERVICE_NAME);
   }
 
-  // ✅ Create Trip
+  // ? Create Trip
   @Post()
+  @Roles(Role.PASSENGER)
   async createTrip(@Body() body: tripPackage.CreateTripRequest) {
-    return this.tripServiceClient.createTrip(body);
+    const result = await firstValueFrom(this.tripServiceClient.createTrip(body));
+    return success(result, 201, 'Trip created successfully');
   }
 
-  // ✅ Get Trip by ID
+  // ? Get Trip by ID
   @Get(':tripId')
+  @Roles(Role.PASSENGER, Role.DRIVER)
   async getTrip(@Param('tripId') tripId: string) {
-    return this.tripServiceClient.getTrip({ tripId });
+    const result = await firstValueFrom(this.tripServiceClient.getTrip({ tripId }));
+    return success(result, 200, 'Trip retrieved successfully');
   }
 
-  // ✅ Cancel Trip
+  // ? Cancel Trip
   @Patch(':tripId/cancel')
+  @Roles(Role.PASSENGER, Role.DRIVER)
   async cancelTrip(@Param('tripId') tripId: string) {
-    return this.tripServiceClient.cancelTrip({ tripId });
+    const result = await firstValueFrom(this.tripServiceClient.cancelTrip({ tripId }));
+    return success(result, 200, 'Trip cancelled successfully');
   }
 
-  // ✅ Assign Driver
+  // ? Assign Driver
   @Post(':tripId/assign-driver')
+  @Roles(Role.DRIVER)
   async assignDriver(
     @Param('tripId') tripId: string,
     @Body() body: { driverId: string },
   ) {
-    return this.tripServiceClient.assignDriver({
+    const result = this.tripServiceClient.assignDriver({
       tripId,
       driverId: body.driverId,
     });
+    return success(result, 200, 'Driver assigned successfully');
   }
 
-  // ✅ Start Trip
+  // ? Start Trip
   @Patch(':tripId/start')
+  @Roles(Role.DRIVER)
   async startTrip(@Param('tripId') tripId: string) {
-    return this.tripServiceClient.startTrip({ tripId });
+    const result = await firstValueFrom(this.tripServiceClient.startTrip({ tripId }));
+    return success(result, 200, 'Trip started successfully');
   }
 
-  // ✅ Complete Trip
+  // ? Complete Trip
   @Patch(':tripId/complete')
+  @Roles(Role.DRIVER)
   async completeTrip(@Param('tripId') tripId: string) {
-    return this.tripServiceClient.completeTrip({ tripId });
+    const result = await firstValueFrom(this.tripServiceClient.completeTrip({ tripId }));
+    return success(result, 200, 'Trip completed successfully');
   }
 
-  // ✅ Rate Trip
+  // ? Rate Trip
   @Post(':tripId/rating')
+  @Roles(Role.PASSENGER, Role.DRIVER)
   async rateTrip(
     @Param('tripId') tripId: string,
     @Body() body: {
@@ -69,19 +87,22 @@ export class TripController implements OnModuleInit {
       comment?: string;
     },
   ) {
-    return this.tripServiceClient.rateTrip({
+    const result = await firstValueFrom(this.tripServiceClient.rateTrip({
       tripId,
       ratedBy: body.ratedBy,
       ratedUser: body.ratedUser,
       raterRole: body.raterRole,
       rating: body.rating,
       comment: body.comment ?? '',
-    });
+    }));
+    return success(result, 200, 'Trip rated successfully');
   }
 
-  // ✅ Trip History (by user)
+  // ? Trip History (by user)
   @Get('user/:userId')
+  @Roles(Role.PASSENGER)
   async tripHistory(@Param('userId') userId: string) {
-    return this.tripServiceClient.tripHistory({ userId });
+    const result = await firstValueFrom(this.tripServiceClient.tripHistory({ userId }));
+    return success(result, 200, 'Trip history retrieved successfully');
   }
 }

@@ -9,6 +9,7 @@ import Redis from 'ioredis';
 import { haversine } from '../helpers/haversine';
 import { ClientGrpc, ClientProxy, RmqContext } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import { RoutingService } from '../routing/routing.service';
 // import { RmqService } from '../rmqService/rmq.service';
 
 @Injectable()
@@ -18,18 +19,38 @@ export class TripsService {
     @InjectRepository(Rating) private readonly ratingRepo: Repository<Rating>,
     @Inject('DRIVER_SERVICE_RMQ') private readonly driverRmqClient: ClientProxy,
     @Inject('NOTIFICATION_SERVICE_RMQ') private readonly notifRmqClient: ClientProxy,
-
+    @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
+    private readonly routingService: RoutingService
     // private readonly rmqService: RmqService,
   ) { }
 
   async createTrip(request: tripPackage.CreateTripRequest): Promise<tripPackage.CreateTripResponse> {
     const { passengerId, pickup, dropoff, vehicleType } = request;
 
-    const distance = haversine(pickup.lat, pickup.lng, dropoff.lat, dropoff.lng);
+    const existingTrip = await this.tripRepo.findOne({
+      where: {
+        passengerId: passengerId,
+        tripStatus: TripStatus.SEARCHING,
+      },
+    });
 
-    // TODO: handle price calculation
-    const estimatedPrice = 10000; // mock
-    const finalPrice = 10000;
+    if (existingTrip) {
+      throw new Error('There is already an ongoing trip for this passenger.');
+    }
+
+    // Get route from OSRM (with fallback to Haversine)
+    const routeData = await this.routingService.getRoute(
+      pickup.lat,
+      pickup.lng,
+      dropoff.lat,
+      dropoff.lng,
+      'car' // default profile, can be mapped from vehicleType later
+    );
+
+    // Calculate price based on distance (10000 VND/km base rate)
+    const pricePerKm = 10000;
+    const estimatedPrice = Math.round(routeData.distanceKm * pricePerKm);
+    const finalPrice = estimatedPrice;
 
     const newTrip = this.tripRepo.create({
       passengerId: passengerId,
@@ -41,35 +62,34 @@ export class TripsService {
       dropoffAddress: dropoff.address,
       vehicleType: vehicleTypeToDB(vehicleType.typeId),
       tripStatus: TripStatus.SEARCHING,
-      distanceKm: distance,
-      estimatedPrice, finalPrice,
-      createdAt: new Date(Date.now()),
+      distanceKm: routeData.distanceKm,
+      estimatedDuration: routeData.durationSeconds,
+      routeGeometry: routeData.geometry ? JSON.stringify(routeData.geometry) : null,
+      estimatedPrice,
+      finalPrice,
+      createdAt: new Date((new Date()).getTime() + 7 * 60 * 60 * 1000),
       ratings: []
     });
 
     await this.tripRepo.save(newTrip);
 
-    // TODO: handle rabbitMQ execution
     this.driverRmqClient.emit(
       'trip.created',
       newTrip,
+    );
+
+    const passenger = await firstValueFrom(
+      this.userClient.send({ cmd: 'getCurrentProfile' }, newTrip.passengerId)
     )
+
+    if (!passenger) {
+      throw new NotFoundException('Passenger not found');
+    }
 
     this.notifRmqClient.emit(
       'trip.created',
-      { userEmail: mock_emails.userEmail }
-    )
-
-    // Temporarily inject microservice to get drivers list
-
-    // await this.tripQueue.add(
-    //   'find-driver', 
-    //   { tripId: newTrip.id }, 
-    //   {
-    //     attempts: 1, 
-    //     ttl: 120000
-    //   }
-    // )
+      { userEmail: passenger.email }
+    );
 
     return tripResponse(newTrip);
   }
@@ -95,18 +115,38 @@ export class TripsService {
       where: { id: tripId },
       relations: ['ratings'], // load quan hệ ratings
     });
+
     if (!trip) {
       throw new NotFoundException('Trip not found');
     }
 
-    // TODO: get email by userId
-    this.notifRmqClient.emit('trip.cancelled', { email: mock_emails.driverEmail })
+    const passenger = await firstValueFrom(
+      this.userClient.send({ cmd: 'getCurrentProfile' }, trip.passengerId)
+    )
 
+    console.log("=====AFTER GETTING PASSENGER PROFILE=====");
+
+    if (!passenger) {
+      throw new NotFoundException('Passenger not found');
+    }
+
+    if (trip.tripStatus === TripStatus.SEARCHING || !trip.driverId) {
+      this.notifRmqClient.emit('trip.cancelled', { userEmail: passenger.email, isAuto: true })
+    } else {
+      const driver = await firstValueFrom(
+        this.userClient.send({ cmd: 'getCurrentProfile' }, trip.driverId)
+      )
+      if (!driver) {
+        throw new NotFoundException('Driver not found');
+      }
+
+      this.notifRmqClient.emit('trip.cancelled', { userEmail: passenger.email, driverEmail: driver.email, isAuto: false })
+      // this.notifRmqClient.emit('trip.cancelled', { driverEmail: driver.email })
+    }
+
+    trip.cancelledAt = new Date((new Date()).getTime() + 7 * 60 * 60 * 1000);
     trip.tripStatus = TripStatus.CANCELLED;
-    trip.cancelledAt = new Date(Date.now())
     const cancelledTrip = await this.tripRepo.save(trip);
-    console.log(cancelledTrip.ratings);
-
     return tripResponse(cancelledTrip);
   }
 
@@ -121,9 +161,15 @@ export class TripsService {
       throw new NotFoundException('Trip not found');
     }
 
+    const passenger = await firstValueFrom(
+      this.userClient.send({ cmd: 'getCurrentProfile' }, trip.passengerId)
+    )
+
+    this.notifRmqClient.emit('driver.accepted', { userEmail: passenger.email });
+
     trip.driverId = driverId;
     trip.tripStatus = TripStatus.ACCEPTED;
-    trip.acceptedAt = new Date(Date.now())
+    trip.acceptedAt = new Date((new Date()).getTime() + 7 * 60 * 60 * 1000);
     const assignedTrip = await this.tripRepo.save(trip);
 
     return tripResponse(assignedTrip);
@@ -140,11 +186,15 @@ export class TripsService {
       throw new NotFoundException('Trip not found');
     }
 
-    // TODO: get email by userId, change driver state to online
-    this.notifRmqClient.emit('trip.completed', { email: mock_emails.userEmail })
+    const passenger = await firstValueFrom(
+      this.userClient.send({ cmd: 'getCurrentProfile' }, trip.passengerId)
+    )
+
+    this.notifRmqClient.emit('trip.completed', { userEmail: passenger.email })
+    this.driverRmqClient.emit('trip.completed', { driverId: trip.driverId })
 
     trip.tripStatus = TripStatus.COMPLETED;
-    trip.completedAt = new Date(Date.now())
+    trip.completedAt = new Date((new Date()).getTime() + 7 * 60 * 60 * 1000);
     const completedTrip = await this.tripRepo.save(trip);
 
     return tripResponse(completedTrip);
@@ -164,8 +214,17 @@ export class TripsService {
 
     trip.tripStatus = TripStatus.IN_PROGRESS;
 
-    // TODO: get email by userId
-    this.notifRmqClient.emit('trip.started', { email: mock_emails.userEmail })
+    const passenger = await firstValueFrom(
+      this.userClient.send({ cmd: 'getCurrentProfile' }, trip.passengerId)
+    )
+
+    if (!passenger.email) {
+      throw new NotFoundException('Passenger email not found');
+    }
+
+    this.notifRmqClient.emit('trip.started', { userEmail: passenger.email });
+    this.driverRmqClient.emit('trip.started', { userEmail: trip.driverId });
+
     const startedTrip = await this.tripRepo.save(trip);
 
     return tripResponse(startedTrip);
@@ -181,6 +240,10 @@ export class TripsService {
 
     if (!trip) {
       throw new NotFoundException('Trip not found');
+    }
+
+    if (trip.tripStatus !== TripStatus.SEARCHING) {
+      throw new Error('Trip is not in searching status');
     }
 
     // Re-invite trip
@@ -235,59 +298,20 @@ export class TripsService {
 
   async inviteDriver(invitedTrip: any) {
     const remainingDrivers = [...invitedTrip.potentialDrivers];
-    console.log(typeof remainingDrivers)
+
     if (remainingDrivers.length === 0) {
-      // TODO: get email by userId
-      this.notifRmqClient.emit('trip.cancelled', { driverEmail: 'example@gm.com' })
       this.cancelTrip({ tripId: invitedTrip.id })
       return;
     }
 
     const nextDriver = remainingDrivers[0]; // use for getting email later
+    const driver = await firstValueFrom(
+      this.userClient.send({ cmd: 'getCurrentProfile' }, nextDriver.driverId)
+    )
+
     invitedTrip.potentialDrivers = remainingDrivers.splice(1);
     await this.tripRepo.save(invitedTrip);
-    // TODO: get email by userId
-    this.notifRmqClient.emit('trip.created', { driverEmail: mock_emails.driverEmail });
+
+    this.notifRmqClient.emit('trip.created', { driverEmail: driver.email });
   }
-
-  // async handleDriverAccepted(data: any, context: RmqContext) {
-  //   const channel = context.getChannelRef();
-  //   const originalMsg = context.getMessage();
-  //   channel.ack(originalMsg);
-
-  //   // if (data.tripStatus !== TripStatus.SEARCHING) {
-  //   //   this.rmqService.sendDelayedTrip(data)
-  //   // }
-
-  //   const { tripId } = data;
-  //   const trip = await this.tripRepo.findOne({
-  //   where: { id: tripId },
-  //   relations: ['ratings'], // load quan hệ ratings
-  // });
-  //   if (!trip) {
-  //     throw new NotFoundException('Trip not found');
-  //   }
-
-  //   trip.acceptedAt = new Date(Date.now());
-  //   trip.tripStatus = TripStatus.IN_PROGRESS;
-
-  //   // this.rmqClient.emit('notify')
-  // }
-
-  // async handleTripTimeout(data: any, context: RmqContext) {
-  //   const { tripId } = data;
-  //   const trip = await this.tripRepo.findOne({ where: { id: tripId } });
-
-  //   if (trip.tripStatus === TripStatus.SEARCHING) {
-  //     trip.tripStatus = TripStatus.CANCELLED;
-  //     await this.tripRepo.save(trip);
-  //     console.log(`⏰ Trip ${tripId} timed out after 15s`);
-  //   } else {
-  //     console.log(`✅ Trip ${tripId} already accepted, ignore timeout`);
-  //   }
-
-  //   const channel = context.getChannelRef();
-  //   const msg = context.getMessage();
-  //   channel.ack(msg);
-  // }
 }

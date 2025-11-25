@@ -98,6 +98,7 @@ message CreateTripRequest {
   // Optional fields
   float distanceKm = 5;      // optional
   float estimatedPrice = 6;  // optional
+  string routeGeometry = 7; 
 }
 
 message CreateTripResponse {

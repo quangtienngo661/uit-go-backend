@@ -1,12 +1,16 @@
-import { Body, Controller, Get, Inject, OnModuleInit, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Inject, OnModuleInit, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { DriverService } from './driver.service';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 import { ClientGrpc } from '@nestjs/microservices';
-import { driverPackage } from '@uit-go-backend/shared';
+import { driverPackage, createDriverStatusWrapper, DriverStatus, Role, success } from '@uit-go-backend/shared';
 import { firstValueFrom } from 'rxjs';
 import { UpdateDriverLocationDto } from './dto/update-driver-location.dto';
+import { SupabaseGuard } from '../../guards/auth/supabase.guard';
+import { RolesGuard } from '../../guards/auth/roles.guard';
+import { Roles } from '../../decorators/roles.decorator';
 
 @Controller('drivers')
+@UseGuards(SupabaseGuard, RolesGuard)
 export class DriverController implements OnModuleInit {
   private driverServiceClient: driverPackage.DriverServiceClient
 
@@ -20,51 +24,87 @@ export class DriverController implements OnModuleInit {
   }
 
   @Patch(':driverId/location')
-  updateDriverLocation(@Param('driverId') driverId: string, @Body() updateDriverLocationDto: UpdateDriverLocationDto) {
-    return this.driverServiceClient.updateLocation(
-      {
-        driverId,
-        lng: updateDriverLocationDto.lng,
-        lat: updateDriverLocationDto.lat,
-      }
-    )
+  @Roles(Role.DRIVER)
+  async updateDriverLocation(@Param('driverId') driverId: string, @Body() updateDriverLocationDto: UpdateDriverLocationDto) {
+    const result = await firstValueFrom(
+      this.driverServiceClient.updateLocation(
+        {
+          driverId,
+          lng: updateDriverLocationDto.lng,
+          lat: updateDriverLocationDto.lat,
+        }
+      )
+    );
+    return success(result, 200, 'Driver location updated successfully');
   }
 
   @Patch(':driverId/status')
-  updateDriverStatus(@Param('driverId') driverId: string, @Body() updateDriverDto: UpdateDriverDto) {
-    // TODO: consider importing driver status input by text, for example, 'online'
-    return firstValueFrom(
+  @Roles(Role.DRIVER)
+  async updateDriverStatus(@Param('driverId') driverId: string, @Body() updateDriverDto: UpdateDriverDto) {
+    // Convert proto enum to entity enum and create wrapper
+    const entityStatus = this.protoStatusToEntity(updateDriverDto.status);
+    
+    const result = await firstValueFrom(
       this.driverServiceClient.updateStatus(
         {
           driverId: driverId,
-          status: updateDriverDto.status
+          status: createDriverStatusWrapper(entityStatus)
         }
       )
-    )
+    );
+    return success(result, 200, 'Driver status updated successfully');
+  }
+
+  // Helper to convert proto status to entity status
+  private protoStatusToEntity(protoStatus: any): DriverStatus {
+    switch (protoStatus) {
+      case 1: return DriverStatus.OFFLINE;
+      case 2: return DriverStatus.ONLINE;
+      case 3: return DriverStatus.BUSY;
+      default: return DriverStatus.OFFLINE;
+    }
   }
 
   @Get('search')
-  findNearbyDrivers(@Query() query) { // lat, lng, radius
-    return this.driverServiceClient.findNearbyDrivers(query);
+  @Roles(Role.PASSENGER, Role.DRIVER)
+  async findNearbyDrivers(@Query() query) { // lat, lng, radius
+    const result = await firstValueFrom(this.driverServiceClient.findNearbyDrivers(query));
+    return success(result, 200, 'Nearby drivers retrieved successfully');
   }
 
   @Get(':driverId')
-  getDriverProfile(@Param('driverId') driverId: string) {
-    return firstValueFrom(this.driverServiceClient.getDriverProfile({ driverId }))
+  @Roles(Role.PASSENGER, Role.DRIVER)
+  async getDriverProfile(@Param('driverId') driverId: string) {
+    const result = await firstValueFrom(this.driverServiceClient.getDriverProfile({ driverId }));
+    return success(result, 200, 'Driver profile retrieved successfully');
   }
 
   @Post(':driverId/accept-trip')
-  acceptTrip(
+  @Roles(Role.DRIVER)
+  async acceptTrip(
     @Param('driverId') driverId: string,
     @Body() body: { tripId: string }
   ) {
     const request = {
       tripId: body.tripId, driverId
-    }
+    };
 
-    console.log(request.tripId)
-    return this.driverServiceClient.acceptTrip(request);
+    const result = await firstValueFrom(this.driverServiceClient.acceptTrip(request));
+    return success(result, 200, 'Trip accepted successfully');
+  }
 
-    // return request
+  @Post(':driverId/reject-trip')
+  @Roles(Role.DRIVER)
+  async rejectTrip(
+    @Param('driverId') driverId: string,
+    @Body() body: { tripId: string }
+  ) {
+    const result = await firstValueFrom(
+      this.driverServiceClient.rejectTrip({ 
+        driverId, 
+        tripId: body.tripId 
+      })
+    );
+    return success(result, 200, 'Trip rejected successfully');
   }
 }
