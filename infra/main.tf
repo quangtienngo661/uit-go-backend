@@ -37,9 +37,26 @@ module "ecs" {
   version = "~> 5.11"
 
   cluster_name = "${local.name_prefix}-ecs"
-  fargate_capacity_providers = ["FARGATE", "FARGATE_SPOT"]
-  cluster_settings = { containerInsights = "enabled" }
-  tags = local.tags
+  fargate_capacity_providers = {
+    FARGATE = {
+      default_capacity_provider_strategy = [
+        { capacity_provider = "FARGATE", weight = 1, base = 0 }
+      ]
+    }
+    FARGATE_SPOT = {
+      default_capacity_provider_strategy = [
+        { capacity_provider = "FARGATE_SPOT", weight = 2, base = 0 }
+      ]
+    }
+  }
+  autoscaling_capacity_providers = {}
+  cluster_settings = [
+    {
+      name  = "containerInsights"
+      value = "enabled"
+    }
+  ]
+  tags = merge(local.tags, { Service = "user-service" })
 }
 
 resource "aws_cloudwatch_log_group" "svc" {
@@ -52,12 +69,13 @@ resource "aws_cloudwatch_log_group" "svc" {
 # 4) ALB (public) -> api-gateway
 ############################################
 resource "aws_security_group" "alb" {
+  count  = var.enable_alb ? 1 : 0
   name   = "${local.name_prefix}-alb-sg"
   vpc_id = module.vpc.vpc_id
   ingress {
-    from_port = 80
-    to_port = 80
-    protocol = "tcp"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
     }
   egress  {
@@ -66,21 +84,23 @@ resource "aws_security_group" "alb" {
     protocol = "-1"
     cidr_blocks = ["0.0.0.0/0"]
     }
-  tags = local.tags
+  tags = merge(local.tags, { Service = "trip-service" })
 }
 
 module "alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "~> 9.10"
+  count   = var.enable_alb ? 1 : 0
   name    = "${local.name_prefix}-alb"
   load_balancer_type = "application"
   vpc_id  = module.vpc.vpc_id
   subnets = module.vpc.public_subnets
-  security_groups = [aws_security_group.alb.id]
-  tags = local.tags
+  security_groups = var.enable_alb ? [aws_security_group.alb[0].id] : []
+  tags = merge(local.tags, { Service = "driver-service" })
 }
 
 resource "aws_lb_target_group" "api" {
+  count    = var.enable_alb ? 1 : 0
   name     = "${local.name_prefix}-tg"
   port     = local.service_cfg["api-gateway"].port
   protocol = "HTTP"
@@ -90,12 +110,13 @@ resource "aws_lb_target_group" "api" {
 }
 
 resource "aws_lb_listener" "http" {
-  load_balancer_arn = module.alb.arn
+  count             = var.enable_alb ? 1 : 0
+  load_balancer_arn = var.enable_alb ? module.alb[0].arn : null
   port              = 80
   protocol          = "HTTP"
   default_action {
-    type = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
+    type             = "forward"
+    target_group_arn = var.enable_alb ? aws_lb_target_group.api[0].arn : null
     }
 }
 
@@ -105,13 +126,6 @@ resource "aws_lb_listener" "http" {
 resource "aws_security_group" "ecs_tasks" {
   name   = "${local.name_prefix}-ecs-tasks-sg"
   vpc_id = module.vpc.vpc_id
-  # ALB -> ECS
-  ingress {
-    from_port = 3000
-    to_port = 3999
-    protocol = "tcp"
-    security_groups = [aws_security_group.alb.id]
-    }
   egress  {
     from_port = 0
     to_port = 0
@@ -120,6 +134,16 @@ resource "aws_security_group" "ecs_tasks" {
     }
 
   tags = local.tags
+
+  dynamic "ingress" {
+    for_each = var.enable_alb ? [1] : []
+    content {
+      from_port       = 3000
+      to_port         = 3999
+      protocol        = "tcp"
+      security_groups = [aws_security_group.alb[0].id]
+    }
+  }
 }
 
 resource "aws_security_group" "db" {
@@ -160,6 +184,7 @@ resource "aws_security_group" "redis" {
 }
 
 resource "aws_security_group" "mq" {
+  count  = var.enable_mq ? 1 : 0
   name   = "${local.name_prefix}-mq-sg"
   vpc_id = module.vpc.vpc_id
   ingress {
@@ -174,7 +199,7 @@ resource "aws_security_group" "mq" {
     protocol = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  tags = local.tags
+  tags = merge(local.tags, { Component = "mq" })
 }
 
 ############################################
@@ -190,7 +215,7 @@ module "rds_user" {
   version = "~> 6.5"
   identifier = "${local.name_prefix}-userdb"
   engine = "postgres"
-  engine_version = "16.3"
+  engine_version = "15.6"
   instance_class = "db.t4g.micro"
   allocated_storage = 20
   db_name  = "userdb"
@@ -209,7 +234,7 @@ module "rds_trip" {
   version = "~> 6.5"
   identifier = "${local.name_prefix}-tripdb"
   engine = "postgres"
-  engine_version = "16.3"
+  engine_version = "15.6"
   instance_class = "db.t4g.micro"
   allocated_storage = 20
   db_name  = "tripdb"
@@ -228,7 +253,7 @@ module "rds_driver" {
   version = "~> 6.5"
   identifier = "${local.name_prefix}-driverdb"
   engine = "postgres"
-  engine_version = "16.3"
+  engine_version = "15.6"
   instance_class = "db.t4g.micro"
   allocated_storage = 20
   db_name  = "driverdb"
@@ -245,50 +270,60 @@ module "rds_driver" {
 ############################################
 # 7) ElastiCache Redis
 ############################################
-module "redis_subnet_group" {
-  source  = "terraform-aws-modules/elasticache/aws//modules/subnet-group"
-  version = "~> 1.8"
-  subnet_group_name = "${local.name_prefix}-redis-subnets"
+resource "aws_elasticache_subnet_group" "redis" {
+  count      = var.enable_redis ? 1 : 0
+  name       = "${local.name_prefix}-redis-subnets"
   subnet_ids = module.vpc.private_subnets
 }
 
-module "redis" {
-  source  = "terraform-aws-modules/elasticache/aws"
-  version = "~> 1.8"
-  cluster_id         = "${local.name_prefix}-redis"
-  engine             = "redis"
-  node_type          = "cache.t4g.small"
-  num_cache_nodes    = 1
-  subnet_group_name  = module.redis_subnet_group.this_elasticache_subnet_group_name
-  security_group_ids = [aws_security_group.redis.id]
-  parameter_group_name = "default.redis7"
-  tags = local.tags
+resource "aws_elasticache_replication_group" "redis" {
+  count                        = var.enable_redis ? 1 : 0
+  replication_group_id          = "${local.name_prefix}-redis"
+  description                   = "UIT-Go Redis"
+  engine                        = "redis"
+  node_type                     = "cache.t4g.small"
+  num_cache_clusters            = 1
+  automatic_failover_enabled    = false
+  multi_az_enabled              = false
+  subnet_group_name             = var.enable_redis ? aws_elasticache_subnet_group.redis[0].name : null
+  security_group_ids            = [aws_security_group.redis.id]
+  parameter_group_name          = "default.redis7"
+  port                          = 6379
+  tags                          = merge(local.tags, { Component = "redis" })
 }
 
 ############################################
 # 8) Amazon MQ RabbitMQ
 ############################################
 resource "random_password" "mq" {
-  length = 20
-  special = true
+  length           = 20
+  min_lower        = 1
+  min_upper        = 1
+  min_numeric      = 1
+  min_special      = 1
+  special          = true
+  # Amazon MQ rejects ',', ':', '='; restrict special chars to a safe set
+  override_special = "!@#$%^&*()-_+[]{}"
   }
 
 resource "aws_mq_broker" "rabbit" {
+  count                       = var.enable_mq ? 1 : 0
   broker_name                = "${local.name_prefix}-rabbitmq"
   engine_type                = "RabbitMQ"
-  engine_version             = "3.13.6"
+  engine_version             = "3.13"
   host_instance_type         = "mq.t3.micro"
   publicly_accessible        = false
-  security_groups            = [aws_security_group.mq.id]
-  subnet_ids                 = module.vpc.private_subnets
+  security_groups            = [aws_security_group.mq[0].id]
+  deployment_mode            = "SINGLE_INSTANCE"
+  subnet_ids                 = [module.vpc.private_subnets[0]]
   auto_minor_version_upgrade = true
 
   user {
     username = "mqadmin"
-    password = random_password.mq.result
+    password = coalesce(var.rabbitmq_password, random_password.mq.result)
     }
   logs { general = true }
-  tags = local.tags
+  tags = merge(local.tags, { Component = "mq" })
 }
 
 ############################################
@@ -342,6 +377,7 @@ resource "aws_ecs_task_definition" "td" {
   cpu                      = var.container_cpu
   memory                   = var.container_mem
   execution_role_arn       = aws_iam_role.task_exec.arn
+  tags                     = merge(local.tags, { Service = each.key })
 
   container_definitions = jsonencode([
     {
@@ -404,13 +440,13 @@ locals {
       { name = "DRIVERDB_USERNAME", value = var.db_master_username },
       { name = "DRIVERDB_PASSWORD", value = coalesce(var.db_master_password, random_password.db.result) },
       { name = "DRIVERDB_DATABASE", value = "driverdb" },
-      { name = "REDIS_HOST", value = module.redis.primary_endpoint_address },
-      { name = "REDIS_PORT", value = "6379" }
+      { name = "REDIS_HOST", value = var.enable_redis ? aws_elasticache_replication_group.redis[0].primary_endpoint_address : "" },
+      { name = "REDIS_PORT", value = var.enable_redis ? "6379" : "" }
     ]
     "notification-service" = [
       { name = "PORT", value = tostring(local.service_cfg["notification-service"].port) },
-      { name = "RABBITMQ_ENDPOINT", value = aws_mq_broker.rabbit.instances[0].endpoints[0] },
-      { name = "RABBITMQ_USER", value = "mqadmin" },
+      { name = "RABBITMQ_URL", value = var.enable_mq ? aws_mq_broker.rabbit[0].instances[0].endpoints[0] : "" },
+      { name = "RABBITMQ_USER", value = var.enable_mq ? "mqadmin" : "" },
       { name = "MAIL_HOST", value = var.mail_host },
       { name = "MAIL_PORT", value = tostring(var.mail_port) },
       { name = "MAIL_USER", value = var.mail_user },
@@ -431,7 +467,17 @@ resource "aws_ecs_service" "svc" {
   cluster         = module.ecs.cluster_id
   task_definition = aws_ecs_task_definition.td[each.key].arn
   desired_count   = var.desired_count
-  launch_type     = "FARGATE"
+
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight            = 2
+    base              = 0
+  }
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE"
+    weight            = 1
+    base              = 0
+  }
 
   network_configuration {
     subnets         = module.vpc.private_subnets
@@ -444,14 +490,45 @@ resource "aws_ecs_service" "svc" {
   }
 
   dynamic "load_balancer" {
-    for_each = each.key == "api-gateway" ? [1] : []
+    for_each = var.enable_alb && each.key == "api-gateway" ? [1] : []
     content {
-      target_group_arn = aws_lb_target_group.api.arn
+      target_group_arn = aws_lb_target_group.api[0].arn
       container_name   = each.key
       container_port   = each.value.port
     }
   }
 
-  depends_on = [aws_lb_listener.http]
-  tags       = local.tags
+  tags       = merge(local.tags, { Service = each.key })
+}
+
+############################################
+# 13) ECS Auto Scaling (target CPU 70%)
+############################################
+resource "aws_appautoscaling_target" "ecs_service" {
+  for_each = local.service_cfg
+
+  max_capacity       = 2
+  min_capacity       = 0
+  resource_id        = "service/${module.ecs.cluster_name}/${aws_ecs_service.svc[each.key].name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "ecs_cpu" {
+  for_each = local.service_cfg
+
+  name               = "${each.key}-cpu-scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.ecs_service[each.key].resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_service[each.key].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_service[each.key].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = 70
+    scale_in_cooldown  = 60
+    scale_out_cooldown = 60
+  }
 }

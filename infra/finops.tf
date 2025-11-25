@@ -5,6 +5,7 @@
 
 # 1) AWS Budget for monthly cost control
 resource "aws_budgets_budget" "monthly" {
+  count             = var.enable_budget && length(var.budget_alert_emails) > 0 ? 1 : 0
   name              = "${local.name_prefix}-monthly-budget"
   budget_type       = "COST"
   limit_amount      = "500"
@@ -39,6 +40,7 @@ resource "aws_budgets_budget" "monthly" {
 
 # 2) CloudWatch Cost Anomaly Detection
 resource "aws_ce_anomaly_monitor" "service_monitor" {
+  count            = var.enable_anomaly_monitor ? 1 : 0
   name              = "${local.name_prefix}-cost-anomaly"
   monitor_type      = "DIMENSIONAL"
   monitor_dimension = "SERVICE"
@@ -47,11 +49,12 @@ resource "aws_ce_anomaly_monitor" "service_monitor" {
 }
 
 resource "aws_ce_anomaly_subscription" "anomaly_alert" {
+  count     = var.enable_anomaly_monitor ? 1 : 0
   name      = "${local.name_prefix}-anomaly-subscription"
   frequency = "DAILY"
 
   monitor_arn_list = [
-    aws_ce_anomaly_monitor.service_monitor.arn,
+    aws_ce_anomaly_monitor.service_monitor[0].arn,
   ]
 
   subscriber {
@@ -114,9 +117,9 @@ resource "aws_cloudwatch_dashboard" "finops" {
       {
         type = "log"
         properties = {
-          query   = "SOURCE '${aws_cloudwatch_log_group.svc.name}' | fields @timestamp, @message | filter @message like /ERROR/ | stats count() by bin(5m)"
-          region  = var.region
-          title   = "Error Rate (5min intervals)"
+          query  = "SOURCE '${aws_cloudwatch_log_group.svc.name}' | fields @timestamp, @message | filter @message like /ERROR/ | stats count() by bin(5m)"
+          region = var.region
+          title  = "Error Rate (5min intervals)"
         }
       }
     ]
@@ -166,10 +169,9 @@ resource "aws_ce_cost_category" "project_category" {
   rule {
     value = "api-gateway"
     rule {
-      dimension {
-        key           = "TAG"
-        values        = ["api-gateway"]
-        match_options = ["CONTAINS"]
+      tags {
+        key    = "Service"
+        values = ["api-gateway"]
       }
     }
   }
@@ -177,10 +179,9 @@ resource "aws_ce_cost_category" "project_category" {
   rule {
     value = "user-service"
     rule {
-      dimension {
-        key           = "TAG"
-        values        = ["user-service"]
-        match_options = ["CONTAINS"]
+      tags {
+        key    = "Service"
+        values = ["user-service"]
       }
     }
   }
@@ -188,10 +189,9 @@ resource "aws_ce_cost_category" "project_category" {
   rule {
     value = "trip-service"
     rule {
-      dimension {
-        key           = "TAG"
-        values        = ["trip-service"]
-        match_options = ["CONTAINS"]
+      tags {
+        key    = "Service"
+        values = ["trip-service"]
       }
     }
   }
@@ -199,10 +199,9 @@ resource "aws_ce_cost_category" "project_category" {
   rule {
     value = "driver-service"
     rule {
-      dimension {
-        key           = "TAG"
-        values        = ["driver-service"]
-        match_options = ["CONTAINS"]
+      tags {
+        key    = "Service"
+        values = ["driver-service"]
       }
     }
   }
@@ -210,10 +209,9 @@ resource "aws_ce_cost_category" "project_category" {
   rule {
     value = "notification-service"
     rule {
-      dimension {
-        key           = "TAG"
-        values        = ["notification-service"]
-        match_options = ["CONTAINS"]
+      tags {
+        key    = "Service"
+        values = ["notification-service"]
       }
     }
   }
@@ -221,10 +219,9 @@ resource "aws_ce_cost_category" "project_category" {
   rule {
     value = "infrastructure"
     rule {
-      dimension {
-        key           = "TAG"
-        values        = ["vpc", "nat", "alb"]
-        match_options = ["CONTAINS"]
+      tags {
+        key    = "Component"
+        values = ["vpc", "nat", "alb"]
       }
     }
   }

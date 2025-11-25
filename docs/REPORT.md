@@ -8,6 +8,7 @@
 **Module Focus:** Module E - Automation & Cost Optimization (FinOps)
 
 **Team Members:**
+
 - **Không Huỳnh Ngọc Hân** (23520427) - Auth Service, User Service, Infrastructure, Documentation
 - **Ngô Quang Tiến** (23521574) - Project Architecture, Driver Service, Trip Service, Database Design
 - **Nguyễn Hữu Duy** (23520374) - Notification Service, RabbitMQ Integration
@@ -91,21 +92,22 @@ Data Layer:
 
 ### 2.2. Service Responsibilities
 
-| Service | Lines of Code | Key Technologies | Primary Function |
-|---------|---------------|------------------|------------------|
-| **API Gateway** | ~800 | NestJS, Express, JWT | External HTTP endpoint, authentication gateway |
-| **Auth Service** | ~500 | NestJS, Supabase SDK | User registration, login, token management |
-| **User Service** | ~1,200 | NestJS, TypeORM, PostgreSQL | User profiles, driver profile management |
-| **Trip Service** | ~1,500 | NestJS, TypeORM, PostgreSQL, gRPC | Trip lifecycle, ratings, driver matching |
-| **Driver Service** | ~1,300 | NestJS, TypeORM, PostgreSQL, Redis, gRPC | Real-time location tracking, proximity search |
-| **Notification** | ~600 | NestJS, RabbitMQ, Nodemailer | Email notifications for trip events |
-| **Shared Library** | ~400 | Proto files, DTOs, utilities | Code reuse across services |
+| Service            | Lines of Code | Key Technologies                         | Primary Function                               |
+| ------------------ | ------------- | ---------------------------------------- | ---------------------------------------------- |
+| **API Gateway**    | ~800          | NestJS, Express, JWT                     | External HTTP endpoint, authentication gateway |
+| **Auth Service**   | ~500          | NestJS, Supabase SDK                     | User registration, login, token management     |
+| **User Service**   | ~1,200        | NestJS, TypeORM, PostgreSQL              | User profiles, driver profile management       |
+| **Trip Service**   | ~1,500        | NestJS, TypeORM, PostgreSQL, gRPC        | Trip lifecycle, ratings, driver matching       |
+| **Driver Service** | ~1,300        | NestJS, TypeORM, PostgreSQL, Redis, gRPC | Real-time location tracking, proximity search  |
+| **Notification**   | ~600          | NestJS, RabbitMQ, Nodemailer             | Email notifications for trip events            |
+| **Shared Library** | ~400          | Proto files, DTOs, utilities             | Code reuse across services                     |
 
 **Total Codebase:** ~6,300 lines of TypeScript (excluding tests, configs)
 
 ### 2.3. Communication Patterns
 
 #### Pattern 1: Synchronous REST (External API)
+
 **Use Case:** Client ↔ API Gateway
 
 **Rationale:** Industry standard for public APIs, excellent tooling (Swagger, Postman), human-readable.
@@ -113,6 +115,7 @@ Data Layer:
 **Measured Performance:** ~100ms avg latency (local)
 
 #### Pattern 2: Synchronous gRPC (Internal Critical Path)
+
 **Use Case:** Trip Service ↔ Driver Service (find nearby drivers)
 
 **Rationale:** 60% latency reduction (40ms vs 100ms REST) on user-facing critical path.
@@ -122,6 +125,7 @@ Data Layer:
 **Measured Performance:** ~40ms avg latency (local)
 
 #### Pattern 3: Asynchronous RabbitMQ (Event-Driven)
+
 **Use Case:** Inter-service events (trip.created, driver.accepted, etc.)
 
 **Rationale:** Decouple services, eventual consistency acceptable for non-critical workflows.
@@ -131,6 +135,7 @@ Data Layer:
 ### 2.4. Data Architecture
 
 **Database Per Service Pattern:**
+
 - **Philosophy:** Each service owns its data exclusively
 - **Benefits:** Independent scaling, fault isolation, technology freedom
 - **Challenge:** No SQL joins across services
@@ -138,14 +143,15 @@ Data Layer:
 
 **Data Stores:**
 
-| Service | Database | Purpose | Estimated Size (10K users) |
-|---------|----------|---------|----------------------------|
-| User | PostgreSQL | User profiles, driver profiles | 1 GB |
-| Trip | PostgreSQL | Trip history, ratings | 5 GB (100K trips) |
-| Driver | PostgreSQL | Driver persistent data | 500 MB |
-| Driver | Redis Geo | Real-time driver locations | 600 KB (in-memory) |
+| Service | Database   | Purpose                        | Estimated Size (10K users) |
+| ------- | ---------- | ------------------------------ | -------------------------- |
+| User    | PostgreSQL | User profiles, driver profiles | 1 GB                       |
+| Trip    | PostgreSQL | Trip history, ratings          | 5 GB (100K trips)          |
+| Driver  | PostgreSQL | Driver persistent data         | 500 MB                     |
+| Driver  | Redis Geo  | Real-time driver locations     | 600 KB (in-memory)         |
 
 **Consistency Model:**
+
 - **Strong Consistency:** Within a single service (ACID transactions)
 - **Eventual Consistency:** Across services (event-driven updates via RabbitMQ)
 
@@ -158,6 +164,7 @@ Data Layer:
 **Module E: Automation & Cost Optimization (FinOps)** requires demonstrating **cost-conscious architecture** and **informed trade-off decision-making**.
 
 Our approach:
+
 1. **Quantify Every Decision:** Estimate AWS monthly costs for each technology choice
 2. **Optimize Selectively:** Invest in performance only where users feel it
 3. **Document Trade-offs:** Explicit about what's sacrificed and why
@@ -175,19 +182,21 @@ Our approach:
 
 **Cost Analysis:**
 
-| Component | Kafka (AWS MSK) | RabbitMQ (EC2) | Savings |
-|-----------|-----------------|----------------|---------|
-| Broker Infrastructure | 3× m5.large ($144/mo) | 1× t4g.small ($15/mo) | $129/mo |
-| Zookeeper / Management | t3.small ($30/mo) | Included | $30/mo |
-| **Total Monthly Cost** | **~$174/mo** | **~$15/mo** | **$159/mo** |
-| **Annual Savings** | | | **$1,908/year** |
+| Component              | Kafka (AWS MSK)       | RabbitMQ (EC2)        | Savings         |
+| ---------------------- | --------------------- | --------------------- | --------------- |
+| Broker Infrastructure  | 3× m5.large ($144/mo) | 1× t4g.small ($15/mo) | $129/mo         |
+| Zookeeper / Management | t3.small ($30/mo)     | Included              | $30/mo          |
+| **Total Monthly Cost** | **~$174/mo**          | **~$15/mo**           | **$159/mo**     |
+| **Annual Savings**     |                       |                       | **$1,908/year** |
 
 **Non-Cost Factors:**
+
 - **Setup Time:** 30 minutes (RabbitMQ) vs 2-3 hours (Kafka)
 - **Resource Usage:** 150 MB RAM (RabbitMQ) vs 800 MB (Kafka) - **81% reduction**
 - **Developer Experience:** Single container vs multi-broker cluster
 
 **Trade-off Accepted:**
+
 - ❌ **Lost:** Event replay capability (Kafka strength)
 - ✅ **Gained:** $1,908/year savings, faster development cycles
 - **Mitigation:** Store critical events in PostgreSQL audit log for historical queries
@@ -201,34 +210,37 @@ Our approach:
 **Context:** Need sub-second proximity search for driver locations.
 
 **Options Considered:**
+
 - **PostGIS (PostgreSQL extension):** Industry standard for geospatial queries
 - **Redis Geospatial:** In-memory index with built-in haversine distance
 
 **Cost Analysis:**
 
-| Component | PostGIS (RDS) | Redis (Elasticache) | Savings |
-|-----------|---------------|---------------------|---------|
-| Instance Type | db.t4g.medium | cache.t4g.micro | - |
-| **Monthly Cost** | **$45** | **$12** | **$33/mo** |
-| **Annual Savings** | | | **$396/year** |
+| Component          | PostGIS (RDS) | Redis (Elasticache) | Savings       |
+| ------------------ | ------------- | ------------------- | ------------- |
+| Instance Type      | db.t4g.medium | cache.t4g.micro     | -             |
+| **Monthly Cost**   | **$45**       | **$12**             | **$33/mo**    |
+| **Annual Savings** |               |                     | **$396/year** |
 
 **Performance Analysis:**
 
-| Metric | PostGIS | Redis Geo | Winner |
-|--------|---------|-----------|--------|
-| Query Latency | 50-100ms | **3-5ms** | Redis (20x faster) |
-| Setup Complexity | High (spatial indexes) | Low (single command) | Redis |
-| Memory Footprint (10K drivers) | ~50 MB (on-disk) | ~600 KB (in-memory) | PostGIS |
-| Persistence | ✅ Yes | ❌ In-memory only | PostGIS |
+| Metric                         | PostGIS                | Redis Geo            | Winner             |
+| ------------------------------ | ---------------------- | -------------------- | ------------------ |
+| Query Latency                  | 50-100ms               | **3-5ms**            | Redis (20x faster) |
+| Setup Complexity               | High (spatial indexes) | Low (single command) | Redis              |
+| Memory Footprint (10K drivers) | ~50 MB (on-disk)       | ~600 KB (in-memory)  | PostGIS            |
+| Persistence                    | ✅ Yes                 | ❌ In-memory only    | PostGIS            |
 
 **Decision:** Redis Geospatial
 
-**Rationale:** 
+**Rationale:**
+
 - **Speed-first for UX:** Ride-sharing users expect instant driver search (< 1 second)
 - **Cost savings:** $396/year aligns with Module E
 - **Simplicity:** One Redis command vs complex spatial indexes
 
 **Trade-off Accepted:**
+
 - ❌ **Lost:** Persistence (locations lost on restart)
 - **Mitigation:** Drivers re-send location on reconnect (~30 seconds, acceptable)
 - ❌ **Lost:** Historical location queries
@@ -246,15 +258,16 @@ Our approach:
 
 **Cost Analysis:**
 
-| Configuration | High Availability | Cost-Optimized | Savings |
-|---------------|-------------------|----------------|---------|
-| NAT Gateways | 3 | 1 | - |
-| **Monthly Cost** | **$90** | **$30** | **$60/mo** |
-| Availability | 99.99% | 99.9% | -0.09% |
+| Configuration    | High Availability | Cost-Optimized | Savings    |
+| ---------------- | ----------------- | -------------- | ---------- |
+| NAT Gateways     | 3                 | 1              | -          |
+| **Monthly Cost** | **$90**           | **$30**        | **$60/mo** |
+| Availability     | 99.99%            | 99.9%          | -0.09%     |
 
 **Decision:** Single NAT Gateway for dev/staging environments
 
 **Trade-off Accepted:**
+
 - ❌ **Lost:** 0.09% availability (43 minutes downtime/month theoretical)
 - ✅ **Acceptable:** For non-production environments
 - **Production Strategy:** Scale to 3 NAT Gateways when deploying production
@@ -263,12 +276,12 @@ Our approach:
 
 #### Summary: Total Cost Savings from Module E Decisions
 
-| Decision | Annual Savings | Status |
-|----------|----------------|--------|
-| RabbitMQ vs Kafka | $1,908 | ✅ Implemented (local) |
-| Redis Geo vs PostGIS | $396 | ✅ Implemented (local) |
-| Single NAT Gateway | $720 | 📝 Terraform plan (not deployed) |
-| **Total Estimated Savings** | **$3,024/year** | |
+| Decision                    | Annual Savings  | Status                           |
+| --------------------------- | --------------- | -------------------------------- |
+| RabbitMQ vs Kafka           | $1,908          | ✅ Implemented (local)           |
+| Redis Geo vs PostGIS        | $396            | ✅ Implemented (local)           |
+| Single NAT Gateway          | $720            | 📝 Terraform plan (not deployed) |
+| **Total Estimated Savings** | **$3,024/year** |                                  |
 
 **Percentage Reduction:** ~73% compared to "industry standard" stack (Kafka + PostGIS + 3 NAT Gateways)
 
@@ -278,28 +291,30 @@ Our approach:
 
 All services run on a **single developer laptop** (8GB RAM, 4 CPU cores):
 
-| Container | CPU Limit | Memory Limit | Actual Usage (Idle) |
-|-----------|-----------|--------------|---------------------|
-| user-db | 0.5 vCPU | 256 MB | ~80 MB |
-| trip-db | 0.5 vCPU | 256 MB | ~90 MB |
-| driver-db | 0.5 vCPU | 256 MB | ~85 MB |
-| redis | 0.25 vCPU | 128 MB | ~15 MB |
-| rabbitmq | 0.5 vCPU | 512 MB | ~150 MB |
-| api-gateway | 0.5 vCPU | 256 MB | ~120 MB |
-| auth | 0.25 vCPU | 128 MB | ~80 MB |
-| user | 0.5 vCPU | 256 MB | ~110 MB |
-| trip | 0.5 vCPU | 384 MB | ~140 MB |
-| driver | 0.5 vCPU | 384 MB | ~150 MB |
-| notification | 0.25 vCPU | 128 MB | ~70 MB |
-| **TOTAL** | **4.75 vCPU** | **3 GB** | **~1.1 GB (idle)** |
+| Container    | CPU Limit     | Memory Limit | Actual Usage (Idle) |
+| ------------ | ------------- | ------------ | ------------------- |
+| user-db      | 0.5 vCPU      | 256 MB       | ~80 MB              |
+| trip-db      | 0.5 vCPU      | 256 MB       | ~90 MB              |
+| driver-db    | 0.5 vCPU      | 256 MB       | ~85 MB              |
+| redis        | 0.25 vCPU     | 128 MB       | ~15 MB              |
+| rabbitmq     | 0.5 vCPU      | 512 MB       | ~150 MB             |
+| api-gateway  | 0.5 vCPU      | 256 MB       | ~120 MB             |
+| auth         | 0.25 vCPU     | 128 MB       | ~80 MB              |
+| user         | 0.5 vCPU      | 256 MB       | ~110 MB             |
+| trip         | 0.5 vCPU      | 384 MB       | ~140 MB             |
+| driver       | 0.5 vCPU      | 384 MB       | ~150 MB             |
+| notification | 0.25 vCPU     | 128 MB       | ~70 MB              |
+| **TOTAL**    | **4.75 vCPU** | **3 GB**     | **~1.1 GB (idle)**  |
 
 **Benefits:**
+
 - ✅ Entire stack runs comfortably on 8GB laptop
 - ✅ Fast startup: ~60 seconds for all containers
 - ✅ No cloud costs during development
 - ✅ Reproducible environment (Docker Compose = "infrastructure as code" for local)
 
 **CI/CD Implications:**
+
 - GitHub Actions runners: 2 vCPU, 7 GB RAM ($0.008/minute)
 - Our stack fits: Can run full integration tests in CI
 - Cost: ~$15/month for 100 builds (each 15 minutes)
@@ -311,6 +326,7 @@ All services run on a **single developer laptop** (8GB RAM, 4 CPU cores):
 **Purpose:** Define reusable, cost-tagged infrastructure for future cloud deployment.
 
 **Key Modules:**
+
 ```
 infra/
 ├── main.tf        # VPC, ECS Fargate cluster, ALB
@@ -321,6 +337,7 @@ infra/
 ```
 
 **Cost Tagging Strategy:**
+
 ```hcl
 locals {
   tags = {
@@ -334,11 +351,13 @@ locals {
 ```
 
 **Purpose of Tags:**
+
 - Track costs per service via AWS Cost Explorer
 - Identify optimization opportunities (e.g., "Trip Service costs $50/mo, can we optimize?")
 - Forecast future costs based on historical data
 
 **Example Usage:**
+
 ```bash
 cd infra
 terraform init
@@ -348,6 +367,7 @@ terraform apply
 ```
 
 **Next Steps (Phase 2 - Cloud Deployment):**
+
 1. Deploy to AWS ECS Fargate
 2. Configure AWS Budgets with alerts ($100/mo threshold)
 3. Enable Cost Explorer for per-service cost analysis
@@ -385,14 +405,14 @@ Cost ◁────────┼────────▷ Complexity
 
 ### 4.2. Decision Matrix
 
-| Decision | Cost Impact | Performance Impact | Complexity Impact | Module E Alignment |
-|----------|-------------|--------------------|--------------------|---------------------|
-| RabbitMQ vs Kafka | ✅ **$159/mo saved** | ⚠️ No event replay | ✅ Simpler setup | ✅ Excellent |
-| Redis Geo vs PostGIS | ✅ **$33/mo saved** | ✅ **20x faster queries** | ✅ Simpler API | ✅ Excellent |
-| gRPC (selective use) | ✅ No extra cost | ✅ **60% latency reduction** | ❌ Proto gen complexity | ✅ Good (optimized critical path only) |
-| Supabase Auth | ✅ **Free tier** | ✅ Fast (managed) | ✅ No auth code to maintain | ✅ Excellent |
-| Database per Service | ❌ 3 DBs vs 1 | ✅ Independent scaling | ⚠️ No SQL joins | ✅ Good (enables independent optimization) |
-| Nx Monorepo | ✅ Lower CI costs | ✅ Faster builds (caching) | ✅ Easier code sharing | ✅ Good (dev velocity) |
+| Decision             | Cost Impact          | Performance Impact           | Complexity Impact           | Module E Alignment                         |
+| -------------------- | -------------------- | ---------------------------- | --------------------------- | ------------------------------------------ |
+| RabbitMQ vs Kafka    | ✅ **$159/mo saved** | ⚠️ No event replay           | ✅ Simpler setup            | ✅ Excellent                               |
+| Redis Geo vs PostGIS | ✅ **$33/mo saved**  | ✅ **20x faster queries**    | ✅ Simpler API              | ✅ Excellent                               |
+| gRPC (selective use) | ✅ No extra cost     | ✅ **60% latency reduction** | ❌ Proto gen complexity     | ✅ Good (optimized critical path only)     |
+| Supabase Auth        | ✅ **Free tier**     | ✅ Fast (managed)            | ✅ No auth code to maintain | ✅ Excellent                               |
+| Database per Service | ❌ 3 DBs vs 1        | ✅ Independent scaling       | ⚠️ No SQL joins             | ✅ Good (enables independent optimization) |
+| Nx Monorepo          | ✅ Lower CI costs    | ✅ Faster builds (caching)   | ✅ Easier code sharing      | ✅ Good (dev velocity)                     |
 
 **Key Insight:** We **optimized cost aggressively** where performance was adequate (RabbitMQ), and **optimized performance** where user experience demanded it (Redis Geo, gRPC on critical path).
 
@@ -401,35 +421,40 @@ Cost ◁────────┼────────▷ Complexity
 **Context:** Driver location queries are on the critical user path.
 
 **User Story:**
+
 1. Passenger opens app, requests trip
 2. **System searches for nearby drivers** ← This step
 3. Driver notified, accepts
 4. Trip begins
 
 **Performance Requirement:**
+
 - **Target:** < 1 second total time (user perception threshold)
 - **Budget for driver search:** < 100ms (10% of total)
 
 **Measured Performance:**
 
-| Technology | Query Time | Meets Requirement? |
-|------------|------------|---------------------|
-| PostGIS (RDS) | 50-100ms | ⚠️ Barely (tight margin) |
-| Redis Geospatial | **3-5ms** | ✅ Yes (20x headroom) |
+| Technology       | Query Time | Meets Requirement?       |
+| ---------------- | ---------- | ------------------------ |
+| PostGIS (RDS)    | 50-100ms   | ⚠️ Barely (tight margin) |
+| Redis Geospatial | **3-5ms**  | ✅ Yes (20x headroom)    |
 
 **Decision:** Redis Geospatial
 
 **Why this matters for Module E:**
+
 - **Cost:** $33/mo saved vs PostGIS
 - **Performance:** 20x faster (3ms vs 60ms avg)
 - **User Experience:** System feels "instant" vs "slow"
 
 **Quote from Test User (simulated):**
+
 > "The driver appeared on the map immediately. Feels faster than Uber." - Potential User
 
 **Trade-off:** Data persistence (lost on Redis restart)
 
 **Mitigation:**
+
 1. Drivers automatically re-send location on reconnect (30 seconds)
 2. Store location events in PostgreSQL via RabbitMQ for analytics
 3. **Impact on user:** 30-second window where some drivers not visible (acceptable vs alternative: always slow queries)
@@ -439,12 +464,14 @@ Cost ◁────────┼────────▷ Complexity
 **Context:** Event-driven communication between services.
 
 **Kafka Strengths:**
+
 - ✅ Event replay (re-process historical events)
 - ✅ Long-term retention (days/weeks)
 - ✅ High throughput (millions of messages/sec)
 - ✅ Industry standard (credibility)
 
 **Problem with Kafka for MVP:**
+
 1. **Overkill:** We need 1,000 msg/sec, Kafka handles millions
 2. **Complexity:** Multi-broker setup, Zookeeper, partition management
 3. **Cost:** $174/mo on AWS (vs $15/mo RabbitMQ)
@@ -453,14 +480,17 @@ Cost ◁────────┼────────▷ Complexity
 **Decision:** RabbitMQ
 
 **Why this matters for Module E:**
+
 - Demonstrates **right-sizing** infrastructure to actual needs
 - **Pragmatic choice** over "resume-driven development"
 - **$1,908/year savings** can fund other initiatives (monitoring tools, testing infrastructure)
 
 **Quote from Team Retrospective:**
+
 > "Choosing RabbitMQ felt risky (everyone uses Kafka), but it saved us 2 weeks of setup time and runs smoothly on our laptops." - Team Discussion
 
 **When to Reconsider:**
+
 - Message throughput > 10,000/sec sustained
 - Need event replay for debugging or compliance
 - Budget allows $174/mo operational cost
@@ -486,12 +516,14 @@ kafka_1 exited with code 1
 ```
 
 **Root Causes Identified:**
+
 1. **Port conflict:** Kafka broker default port (9092) conflicted with PostgreSQL container (also tried 9092 for pgAdmin)
 2. **Resource exhaustion:** Kafka + Zookeeper + 6 microservices exceeded 8GB laptop RAM
 3. **Slow startup:** Kafka took 60+ seconds to start, slowing development iteration loops
 4. **Broker coordination:** Required 3-broker cluster for production-like setup, couldn't run on single dev machine
 
 **Investigation Process:**
+
 1. Checked port usage: `netstat -ano | findstr 9092` (Windows)
 2. Monitored RAM: `docker stats` → Kafka using 800 MB idle
 3. Read Kafka logs: "Not enough replicas" errors
@@ -500,6 +532,7 @@ kafka_1 exited with code 1
 **Solution: Pivot to RabbitMQ**
 
 **Decision Process:**
+
 1. **Re-evaluate requirements:** Do we actually need Kafka's strengths (replay, high throughput)?
 2. **MVP scope:** 1,000 msg/sec target → Kafka overkill
 3. **Research alternatives:** RabbitMQ, AWS SQS, NATS
@@ -508,14 +541,15 @@ kafka_1 exited with code 1
 6. **Team vote:** Unanimous decision to switch
 
 **Implementation:**
+
 ```yaml
 # docker-compose.yml - BEFORE (Kafka)
 zookeeper:
   image: wurstmeister/zookeeper
-  ports: ["2181:2181"]
+  ports: ['2181:2181']
 kafka:
   image: wurstmeister/kafka
-  ports: ["9092:9092"]
+  ports: ['9092:9092']
   environment:
     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     KAFKA_BROKER_ID: 1
@@ -524,7 +558,7 @@ kafka:
 # AFTER (RabbitMQ)
 rabbitmq:
   image: rabbitmq:3-management
-  ports: ["5672:5672", "15672:15672"]  # AMQP + Management UI
+  ports: ['5672:5672', '15672:15672'] # AMQP + Management UI
   environment:
     RABBITMQ_DEFAULT_USER: admin
     RABBITMQ_DEFAULT_PASS: admin123
@@ -532,12 +566,14 @@ rabbitmq:
 ```
 
 **Outcome:**
+
 - ✅ Full stack runs on 8GB laptop
 - ✅ Startup time: 10 seconds (vs 60+ for Kafka)
 - ✅ Development velocity increased (faster iteration)
 - ✅ RAM usage: 150 MB (vs 800 MB)
 
 **Lesson Learned:**
+
 > "Industry best practices" aren't always best for your context. **Match technology to actual requirements, not resume keywords.**
 
 **ADR Created:** [ADR-001: RabbitMQ over Kafka](./ADR/ADR-001-rabbitmq-over-kafka.md)
@@ -557,6 +593,7 @@ Error: 12 UNIMPLEMENTED: The server does not implement the method FindNearbyDriv
 ```
 
 **Context:**
+
 - Proto file defined: `rpc FindNearbyDrivers (LocationRequest) returns (DriversResponse);`
 - Driver Service had method: `@GrpcMethod('DriverService', 'FindNearbyDrivers')`
 - Trip Service client called the method
@@ -566,13 +603,16 @@ Error: 12 UNIMPLEMENTED: The server does not implement the method FindNearbyDriv
 Nx monorepo path resolution issue. Proto files were in `libs/shared/src/lib/protos/driver.proto`, but generated TypeScript was in different location, causing import mismatches.
 
 **Investigation:**
+
 1. Verified proto file syntax (validated with `protoc --lint`)
 2. Checked server logs: Method name correct
 3. Inspected generated TypeScript: Path mismatch found
 4. Compared working NestJS gRPC examples: Different proto gen configuration
 
 **Solution:**
+
 1. **Centralize proto files:**
+
    ```
    libs/shared/src/lib/protos/
    ├── driver.proto
@@ -581,6 +621,7 @@ Nx monorepo path resolution issue. Proto files were in `libs/shared/src/lib/prot
    ```
 
 2. **Configure TypeScript generation:**
+
    ```json
    // libs/shared/project.json
    {
@@ -596,6 +637,7 @@ Nx monorepo path resolution issue. Proto files were in `libs/shared/src/lib/prot
    ```
 
 3. **Import from shared library:**
+
    ```typescript
    // Both services import from same source
    import { DriverService } from '@uit-go/shared';
@@ -609,12 +651,14 @@ Nx monorepo path resolution issue. Proto files were in `libs/shared/src/lib/prot
    ```
 
 **Outcome:**
+
 - ✅ gRPC calls successful: ~40ms latency
 - ✅ Type safety across services (compile-time errors if proto changes)
 - ✅ Team learned Nx monorepo best practices
 
 **Time Lost:** 4 hours debugging  
 **Lesson Learned:**
+
 > "Monorepos require disciplined path management. Centralize shared code and automate generation steps."
 
 ---
@@ -635,12 +679,14 @@ apps/user/src/migrations/
 TypeORM uses timestamps for migration ordering, but parallel development created duplicates.
 
 **Impact:**
+
 - Migration runner failed: "Duplicate migration timestamp"
 - Had to manually rename files
 - Wasted 2 hours coordinating
 
 **Root Cause:**
 Migration file naming convention:
+
 ```bash
 npm run migration:generate:user -- CreateUserTable
 # Generates: {timestamp}-CreateUserTable.ts
@@ -649,6 +695,7 @@ npm run migration:generate:user -- CreateUserTable
 If two developers run this at the exact same second, timestamps collide.
 
 **Solution:**
+
 1. **Coordination:** Announce in team chat before generating migration
 2. **Sequential timestamps:** Add 1 second manually if conflict detected
 3. **Migration ownership:** Assign database ownership per service
@@ -660,10 +707,12 @@ If two developers run this at the exact same second, timestamps collide.
 Use UUIDs instead of timestamps for migration names (TypeORM feature).
 
 **Outcome:**
+
 - Zero migration conflicts after establishing ownership
 - Clear responsibility boundaries
 
 **Lesson Learned:**
+
 > "Database per service isn't just architecture - it's also team organization. Assign ownership to reduce coordination overhead."
 
 ---
@@ -684,14 +733,15 @@ Map each container to different host port:
 ```yaml
 services:
   user-db:
-    ports: ["5433:5432"]   # Host:Container
+    ports: ['5433:5432'] # Host:Container
   trip-db:
-    ports: ["5434:5432"]
+    ports: ['5434:5432']
   driver-db:
-    ports: ["5435:5432"]
+    ports: ['5435:5432']
 ```
 
 **Lesson Learned:**
+
 > "Containerization doesn't eliminate port conflicts - plan host port allocation upfront."
 
 ---
@@ -703,6 +753,7 @@ services:
 **Test Scenario:** End-to-end trip request flow
 
 **Steps:**
+
 1. Register passenger account via API Gateway
 2. Passenger requests trip (pickup → dropoff coordinates)
 3. System searches for nearby drivers (gRPC call to Driver Service)
@@ -728,6 +779,7 @@ services:
 ### 6.2. Performance Validation
 
 **Load Test Setup:**
+
 - Tool: Apache JMeter
 - Scenario: 100 concurrent trip requests
 - Duration: 5 minutes
@@ -735,16 +787,17 @@ services:
 
 **Results:**
 
-| Metric | Target | Achieved | Status |
-|--------|--------|----------|--------|
-| Throughput | 500 req/sec | 680 req/sec | ✅ Exceeds |
-| Avg Latency | < 200ms | 145ms | ✅ Excellent |
-| P95 Latency | < 500ms | 380ms | ✅ Good |
-| Error Rate | < 1% | 0.2% | ✅ Excellent |
-| CPU Usage | < 80% | 62% | ✅ Good headroom |
-| Memory Usage | < 6 GB | 4.2 GB | ✅ Within limits |
+| Metric       | Target      | Achieved    | Status           |
+| ------------ | ----------- | ----------- | ---------------- |
+| Throughput   | 500 req/sec | 680 req/sec | ✅ Exceeds       |
+| Avg Latency  | < 200ms     | 145ms       | ✅ Excellent     |
+| P95 Latency  | < 500ms     | 380ms       | ✅ Good          |
+| Error Rate   | < 1%        | 0.2%        | ✅ Excellent     |
+| CPU Usage    | < 80%       | 62%         | ✅ Good headroom |
+| Memory Usage | < 6 GB      | 4.2 GB      | ✅ Within limits |
 
 **RabbitMQ Metrics (during load test):**
+
 - Messages published: 12,500
 - Messages consumed: 12,498 (99.98% success rate)
 - Avg publish latency: 12ms
@@ -757,29 +810,30 @@ services:
 
 **Projected AWS Monthly Costs (Phase 2 - Cloud Deployment):**
 
-| Component | Instance/Service | Monthly Cost | Annual Cost |
-|-----------|------------------|--------------|-------------|
-| **Compute** |
-| ECS Fargate (6 tasks) | 0.25 vCPU, 0.5 GB each | $40 | $480 |
-| RabbitMQ | EC2 t4g.small | $15 | $180 |
-| **Storage** |
-| RDS PostgreSQL (3x) | db.t4g.micro × 3 | $45 | $540 |
-| Elasticache Redis | cache.t4g.micro | $12 | $144 |
-| **Networking** |
-| Application Load Balancer | Standard | $20 | $240 |
-| NAT Gateway | Single AZ | $30 | $360 |
-| Data Transfer | 100 GB/month | $10 | $120 |
-| **Total Estimated** | | **$172/mo** | **$2,064/year** |
+| Component                 | Instance/Service       | Monthly Cost | Annual Cost     |
+| ------------------------- | ---------------------- | ------------ | --------------- |
+| **Compute**               |
+| ECS Fargate (6 tasks)     | 0.25 vCPU, 0.5 GB each | $40          | $480            |
+| RabbitMQ                  | EC2 t4g.small          | $15          | $180            |
+| **Storage**               |
+| RDS PostgreSQL (3x)       | db.t4g.micro × 3       | $45          | $540            |
+| Elasticache Redis         | cache.t4g.micro        | $12          | $144            |
+| **Networking**            |
+| Application Load Balancer | Standard               | $20          | $240            |
+| NAT Gateway               | Single AZ              | $30          | $360            |
+| Data Transfer             | 100 GB/month           | $10          | $120            |
+| **Total Estimated**       |                        | **$172/mo**  | **$2,064/year** |
 
 **Comparison with "Industry Standard" Stack:**
 
-| Configuration | Monthly Cost | Annual Cost | Difference |
-|---------------|--------------|-------------|------------|
-| **Our Optimized Stack** | $172 | $2,064 | Baseline |
-| Industry Stack (Kafka, PostGIS, 3 NAT) | $340 | $4,080 | +$1,016 (+98%) |
-| **Savings from Module E Decisions** | | | **$2,016/year** |
+| Configuration                          | Monthly Cost | Annual Cost | Difference      |
+| -------------------------------------- | ------------ | ----------- | --------------- |
+| **Our Optimized Stack**                | $172         | $2,064      | Baseline        |
+| Industry Stack (Kafka, PostGIS, 3 NAT) | $340         | $4,080      | +$1,016 (+98%)  |
+| **Savings from Module E Decisions**    |              |             | **$2,016/year** |
 
 **Cost Per User (Estimated):**
+
 - 10,000 monthly active users: **$0.017/user/month**
 - 100,000 MAU: **$0.0024/user/month** (economies of scale)
 
@@ -790,6 +844,7 @@ services:
 **Test:** Service isolation during database failure
 
 **Procedure:**
+
 ```bash
 # Kill Trip Service database
 docker stop trip-db
@@ -800,6 +855,7 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 ```
 
 **Results:**
+
 - ✅ User Service: Fully operational (login, profile updates work)
 - ✅ Driver Service: Fully operational (location updates work)
 - ❌ Trip Service: Returns 503 Service Unavailable (expected)
@@ -821,6 +877,7 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 **Key Insight:** Industry "best practices" are **patterns from other companies' contexts**. Your context (team size, budget, timeline, scale) is unique.
 
 **Applied to Future Decisions:**
+
 - Don't choose technology because "Google uses it"
 - Choose technology because "it solves our specific problem better than alternatives"
 - **Always quantify trade-offs** (cost, performance, complexity)
@@ -828,26 +885,31 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 #### Lesson 2: Optimize the Critical Path, Simplify Everything Else
 
 **Pattern Observed:**
+
 - gRPC (complex): Used only for Trip ↔ Driver (1 connection, latency-critical)
 - REST (simple): Used for everything else (5+ connections, not latency-critical)
 
 **Result:**
+
 - Got 60% latency improvement where it matters (user-facing)
 - Avoided complexity overhead where it doesn't matter
 
 **Key Insight:** **Performance optimization has diminishing returns**. Optimize the 20% that delivers 80% of user value.
 
 **Quote:**
+
 > "We could make every service use gRPC, but only one connection actually benefits from it. Why add complexity everywhere?" - Team Discussion
 
 #### Lesson 3: Developer Experience Is a Feature
 
 **Observation:**
+
 - Nx monorepo: 15-minute onboarding vs 2-hour polyrepo setup
 - Docker Compose: One command vs manual service starts
 - RabbitMQ: Simple dashboard vs Kafka complex monitoring
 
 **Impact on Team Velocity:**
+
 - **Week 1-2:** Slow (learning Docker, Nx, NestJS)
 - **Week 3-4:** Fast (established patterns, quick iteration)
 - **Week 5+:** Very fast (confident in stack, minimal friction)
@@ -859,19 +921,23 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 #### Lesson 4: Document Decisions in Real-Time, Not After
 
 **What We Did:**
+
 - Created ADRs **during** decision-making process
 - Captured alternatives considered, not just final choice
 - Recorded "why NOT X" as important as "why YES Y"
 
 **Why This Worked:**
+
 - Future team members understand rationale (not just outcome)
 - When reviewing decisions (e.g., "Should we reconsider Kafka?"), ADR has all context
 - **Demonstrates engineering maturity** - shows thinking process, not just results
 
 **Anti-Pattern:**
+
 > "Let's build it first, document later."
 
 **Problem with Anti-Pattern:**
+
 - Forget why decisions were made
 - Documentation becomes "justification" rather than "explanation"
 - Hard to onboard new members
@@ -879,9 +945,11 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 #### Lesson 5: Scope Milestones to Demonstrable Value
 
 **Project Milestone 1 Requirement:**
+
 > "Demo 'skeleton' running on local environment (Docker Compose), services can communicate successfully."
 
 **Our Interpretation:**
+
 1. ✅ All 6 services containerized and running
 2. ✅ Inter-service communication working (REST, gRPC, RabbitMQ)
 3. ✅ Database per service implemented
@@ -890,6 +958,7 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 6. ❌ **NOT production-ready** (not required for Milestone 1)
 
 **Why This Worked:**
+
 - **Focused effort** on local development first (faster iteration)
 - **Validated architecture** before incurring cloud costs
 - **Terraform IaC prepared** but not applied (ready for Milestone 2)
@@ -901,17 +970,20 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 #### Lesson 6: Clear Service Ownership Reduces Coordination Overhead
 
 **Service Ownership Assignment:**
+
 - **Hân:** Auth, User (2 services + 1 database)
 - **Tiến:** Driver, Trip (2 services + 2 databases)
 - **Duy:** Notification (1 service, stateless)
 - **All:** API Gateway, Shared Library
 
 **Benefits:**
+
 - Zero merge conflicts on migration files (each owns their DB)
 - Parallel development (no blocking dependencies)
 - Clear responsibility ("Driver service bug? Ask Tiến")
 
 **Challenge:**
+
 - API Gateway (shared) had occasional conflicts
 - **Solution:** Hân designated as "Gateway owner", others create PRs
 
@@ -920,17 +992,20 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 #### Lesson 7: Over-Communication on Architectural Changes
 
 **Practice:**
+
 - Before making significant change (e.g., switch Kafka → RabbitMQ), post in team chat
 - Wait for 24 hours for feedback
 - Create ADR with team input
 - Then implement
 
 **Why This Worked:**
+
 - No "surprise" changes
 - Team buy-in on major decisions
 - Captured diverse perspectives (e.g., Duy raised concern about RabbitMQ learning curve, addressed in training session)
 
 **Quote:**
+
 > "Architecture changes affect everyone. Wait for input before committing." - Team Principle
 
 ---
@@ -940,6 +1015,7 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 ### 8.1. Phase 2: Cloud Deployment (Next Semester)
 
 **Goals:**
+
 1. Deploy to AWS ECS Fargate using Terraform
 2. Implement monitoring (CloudWatch, Prometheus, Grafana)
 3. Set up CI/CD pipeline (GitHub Actions)
@@ -952,12 +1028,14 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 ### 8.2. Technical Enhancements
 
 **Q1 2026:**
+
 - ✅ Migrate Driver Service database to DynamoDB (better fit for location data)
 - ✅ Add read replicas for User Service (read-heavy workload)
 - ✅ Implement comprehensive test suite (unit, integration, E2E)
 - ✅ Add API versioning (/v1, /v2)
 
 **Q2 2026:**
+
 - 🔮 Real-time WebSocket support for live trip tracking
 - 🔮 Implement circuit breakers (Resilience4j pattern)
 - 🔮 Add caching layer (Redis for frequently accessed data)
@@ -966,6 +1044,7 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 ### 8.3. FinOps (Module E) Enhancements
 
 **Phase 2 Cost Optimization:**
+
 1. **Spot Instances:** Deploy RabbitMQ on EC2 Spot (70% cost reduction)
 2. **Reserved Instances:** Commit to 1-year RDS reservations (40% discount)
 3. **Graviton Processors:** Migrate to ARM-based t4g instances (20% cheaper)
@@ -978,6 +1057,7 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 ### 8.4. Feature Roadmap
 
 **User Features:**
+
 - 📱 Real-time trip tracking map (WebSocket)
 - 💳 Payment integration (Stripe/PayPal)
 - ⭐ Enhanced rating system (photos, detailed feedback)
@@ -985,12 +1065,14 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 - 🎁 Referral and loyalty programs
 
 **Driver Features:**
+
 - 📍 Optimized routing (Google Maps API integration)
 - 💰 Earnings dashboard with analytics
 - 📅 Shift scheduling
 - 🏆 Gamification (badges, leaderboards)
 
 **Admin Dashboard:**
+
 - 📊 Real-time system metrics (trips/sec, active users)
 - 👥 User management console
 - 🚨 Fraud detection alerts
@@ -1002,27 +1084,31 @@ curl http://localhost:3000/drivers/nearby  # Driver Service
 
 ### 9.1. Project Achievements
 
-The **UIT-Go** backend system successfully demonstrates a comprehensive understanding of cloud-native microservices architecture with a strong emphasis on **cost optimization** (Module E). 
+The **UIT-Go** backend system successfully demonstrates a comprehensive understanding of cloud-native microservices architecture with a strong emphasis on **cost optimization** (Module E).
 
 **Key Accomplishments:**
 
 ✅ **Functional Microservices:**
+
 - 6 services successfully deployed and communicating
 - 3 communication patterns implemented (REST, gRPC, RabbitMQ)
 - Database per service with proper isolation
 - End-to-end user flows validated
 
 ✅ **Performance:**
+
 - Critical path latency: 42ms (gRPC Trip ↔ Driver)
 - System throughput: 680 req/sec (exceeds 500 target)
 - Driver search: 3-5ms (20x faster than PostGIS alternative)
 
 ✅ **Cost Optimization (Module E):**
+
 - **$2,016/year savings** through deliberate technology choices
 - **49% cost reduction** vs industry-standard stack
 - Clear ROI on every architectural decision
 
 ✅ **Engineering Best Practices:**
+
 - Infrastructure as Code (Terraform)
 - Containerization (Docker)
 - Comprehensive documentation (Architecture, ADRs, OpenAPI)
@@ -1035,11 +1121,13 @@ The **UIT-Go** backend system successfully demonstrates a comprehensive understa
 > **"Understanding that there is no perfect architecture, only architecture that best fits the context."**
 
 **Evidence:**
+
 - 6 ADRs documenting trade-offs, not just decisions
 - Quantitative analysis (cost, latency, complexity) for each choice
 - Explicit "what we sacrificed and why it's acceptable"
 
 **Skills Developed:**
+
 1. **Trade-off Analysis:** Balancing cost, performance, complexity
 2. **Pragmatic Decision-Making:** Choosing "good enough" over "perfect"
 3. **Cost Awareness:** FinOps thinking from day one, not afterthought
@@ -1072,6 +1160,7 @@ The team successfully demonstrated cost-conscious architecture through:
 **Module E Grade Self-Assessment:** ✅ **Excellent**
 
 **Rationale:**
+
 - Demonstrated cost awareness from design phase (not retrofit)
 - Achieved 49% cost reduction with zero performance compromise
 - Comprehensive documentation (6 ADRs + Terraform + this report)
@@ -1080,17 +1169,21 @@ The team successfully demonstrated cost-conscious architecture through:
 ### 9.4. Personal Reflections
 
 **Không Huỳnh Ngọc Hân (Team Lead, 23520427):**
+
 > "This project taught me that System Engineering isn't about using the fanciest technologies. It's about deeply understanding trade-offs and making defensible decisions. The Kafka → RabbitMQ pivot was scary (going against 'best practices'), but it was the right call for our context. I learned to trust data over dogma."
 
 **Ngô Quang Tiến (Technical Lead, 23521574):**
+
 > "Designing the database architecture (3 separate DBs + Redis) forced me to think about eventual consistency and fault isolation. The gRPC implementation was challenging, but seeing that 60% latency improvement made it worth it. I now understand why Netflix uses gRPC for critical paths only - it's about selective optimization."
 
 **Nguyễn Hữu Duy (23520374):**
+
 > "Building the Notification Service with RabbitMQ taught me event-driven architecture. Consuming events from multiple services (trip.created, driver.accepted) and sending emails asynchronously was complex but rewarding. I appreciate how microservices decouple systems."
 
 ### 9.5. Acknowledgments
 
 We thank:
+
 - **Course Instructor** for guidance on System Engineering principles and trade-off thinking
 - **Industry Mentors** (if any) for reviewing our architectural decisions
 - **Open-Source Communities** (NestJS, Nx, RabbitMQ, Supabase) for excellent documentation
@@ -1120,21 +1213,21 @@ The **UIT-Go** project demonstrates that effective System Engineering requires:
 
 ### Appendix A: Technology Stack Summary
 
-| Category | Technology | Version | Purpose |
-|----------|------------|---------|---------|
-| **Language** | TypeScript | 5.3 | Type-safe development |
-| **Framework** | NestJS | 11.0 | Microservices framework |
-| **Build Tool** | Nx | 21.6 | Monorepo management |
-| **Databases** | PostgreSQL | 17 | Primary data store |
-| | Redis | 7 | Geospatial indexing |
-| **Messaging** | RabbitMQ | 3-management | Event-driven communication |
-| **Auth** | Supabase | Latest | Authentication BaaS |
-| **API Protocol** | REST | HTTP/1.1 | External API |
-| | gRPC | HTTP/2 | Internal critical path |
-| **Containerization** | Docker | Latest | Service isolation |
-| | Docker Compose | v2 | Local orchestration |
-| **IaC** | Terraform | 1.6 | Cloud infrastructure (planned) |
-| **Cloud** | AWS | - | Target deployment (Phase 2) |
+| Category             | Technology     | Version      | Purpose                        |
+| -------------------- | -------------- | ------------ | ------------------------------ |
+| **Language**         | TypeScript     | 5.3          | Type-safe development          |
+| **Framework**        | NestJS         | 11.0         | Microservices framework        |
+| **Build Tool**       | Nx             | 21.6         | Monorepo management            |
+| **Databases**        | PostgreSQL     | 17           | Primary data store             |
+|                      | Redis          | 7            | Geospatial indexing            |
+| **Messaging**        | RabbitMQ       | 3-management | Event-driven communication     |
+| **Auth**             | Supabase       | Latest       | Authentication BaaS            |
+| **API Protocol**     | REST           | HTTP/1.1     | External API                   |
+|                      | gRPC           | HTTP/2       | Internal critical path         |
+| **Containerization** | Docker         | Latest       | Service isolation              |
+|                      | Docker Compose | v2           | Local orchestration            |
+| **IaC**              | Terraform      | 1.6          | Cloud infrastructure (planned) |
+| **Cloud**            | AWS            | -            | Target deployment (Phase 2)    |
 
 ### Appendix B: Repository Structure
 
@@ -1169,39 +1262,39 @@ uit-go-backend/
 
 ### Appendix C: Key Metrics Summary
 
-| Metric | Value | Target | Status |
-|--------|-------|--------|--------|
-| **Performance** |
-| System Throughput | 680 req/sec | 500 req/sec | ✅ Exceeds |
-| Avg Latency | 145ms | < 200ms | ✅ Excellent |
-| gRPC Latency (critical path) | 42ms | < 100ms | ✅ Excellent |
-| Redis Geo Query | 4ms | < 50ms | ✅ Excellent |
-| RabbitMQ Pub/Sub | 50-70ms | < 200ms | ✅ Good |
-| **Cost (Projected AWS)** |
-| Monthly Cost | $172 | < $250 | ✅ Good |
-| Cost Per MAU (10K) | $0.017 | < $0.05 | ✅ Excellent |
-| Savings vs Standard Stack | $168/mo | >$100/mo | ✅ Excellent |
-| **Resource Usage (Local)** |
-| RAM Usage (idle) | 1.1 GB | < 4 GB | ✅ Excellent |
-| CPU Usage (idle) | 8% | < 20% | ✅ Excellent |
-| Container Startup | 60 sec | < 120 sec | ✅ Good |
-| **Code Quality** |
-| Services | 6 | 6 | ✅ Complete |
-| ADRs | 6 | ≥5 | ✅ Complete |
-| Test Coverage | TBD | >70% | 🔄 Future work |
+| Metric                       | Value       | Target      | Status         |
+| ---------------------------- | ----------- | ----------- | -------------- |
+| **Performance**              |
+| System Throughput            | 680 req/sec | 500 req/sec | ✅ Exceeds     |
+| Avg Latency                  | 145ms       | < 200ms     | ✅ Excellent   |
+| gRPC Latency (critical path) | 42ms        | < 100ms     | ✅ Excellent   |
+| Redis Geo Query              | 4ms         | < 50ms      | ✅ Excellent   |
+| RabbitMQ Pub/Sub             | 50-70ms     | < 200ms     | ✅ Good        |
+| **Cost (Projected AWS)**     |
+| Monthly Cost                 | $172        | < $250      | ✅ Good        |
+| Cost Per MAU (10K)           | $0.017      | < $0.05     | ✅ Excellent   |
+| Savings vs Standard Stack    | $168/mo     | >$100/mo    | ✅ Excellent   |
+| **Resource Usage (Local)**   |
+| RAM Usage (idle)             | 1.1 GB      | < 4 GB      | ✅ Excellent   |
+| CPU Usage (idle)             | 8%          | < 20%       | ✅ Excellent   |
+| Container Startup            | 60 sec      | < 120 sec   | ✅ Good        |
+| **Code Quality**             |
+| Services                     | 6           | 6           | ✅ Complete    |
+| ADRs                         | 6           | ≥5          | ✅ Complete    |
+| Test Coverage                | TBD         | >70%        | 🔄 Future work |
 
 ### Appendix D: References
 
 1. **Microservices Patterns**
-   - Newman, Sam. *Building Microservices*. O'Reilly, 2015.
-   - Richardson, Chris. *Microservices Patterns*. Manning, 2018.
+   - Newman, Sam. _Building Microservices_. O'Reilly, 2015.
+   - Richardson, Chris. _Microservices Patterns_. Manning, 2018.
 
 2. **Cloud-Native Architecture**
-   - Davis, Cornelia. *Cloud Native Patterns*. Manning, 2019.
+   - Davis, Cornelia. _Cloud Native Patterns_. Manning, 2019.
    - AWS Well-Architected Framework: https://aws.amazon.com/architecture/well-architected/
 
 3. **FinOps (Module E)**
-   - FinOps Foundation. *Cloud FinOps*. O'Reilly, 2021.
+   - FinOps Foundation. _Cloud FinOps_. O'Reilly, 2021.
    - AWS Cost Optimization Guide: https://aws.amazon.com/pricing/cost-optimization/
 
 4. **Technology Documentation**
