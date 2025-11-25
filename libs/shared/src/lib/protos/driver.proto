@@ -11,12 +11,19 @@ service DriverService {
   rpc FindNearbyDrivers (FindNearbyDriversRequest) returns (FindNearbyDriversResponse);
   rpc GetDriverProfile (GetDriverProfileRequest) returns (GetDriverProfileResponse);
   rpc AcceptTrip (AcceptTripRequest) returns (AcceptTripResponse);
+  rpc RejectTrip (RejectTripRequest) returns (RejectTripResponse);
+}
+
+// Re-useable message
+message DriverStatusWrapper {
+  common.DriverStatus statusId = 1;
+  string status = 2;
 }
 
 // Update Status
 message UpdateStatusRequest {
-  string driverId = 1 ;
-  common.DriverStatus status = 2;
+  string driverId = 1;
+  DriverStatusWrapper status = 2;
 }
 
 message UpdateStatusResponse {
@@ -31,7 +38,7 @@ message UpdateLocationRequest {
   float lat = 3; 
 }
 message UpdateLocationResponse {
-
+  string msg = 1;
 }
 
 // Search
@@ -63,11 +70,22 @@ message AcceptTripResponse {
   Driver data = 1;
 }
 
+// Reject Trip
+message RejectTripRequest {
+  string driverId = 1;
+  string tripId = 2;
+}
+
+message RejectTripResponse {
+  bool success = 1;
+  string message = 2;
+}
+
 message Driver {
-  string id = 1; 
-  common.DriverStatus status = 2;
-  float currentLat = 3; 
-  float currentLng = 4; 
+  string id = 1;
+  DriverStatusWrapper status = 2;
+  float currentLat = 3;
+  float currentLng = 4;
   string currentTripId = 5;
 }
 

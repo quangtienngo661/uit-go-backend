@@ -6,6 +6,7 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
+import { AllExceptionsFilter } from './filter/rpc-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,6 +17,8 @@ async function bootstrap() {
     forbidNonWhitelisted: true,
     transform: true,
   }));
+
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);

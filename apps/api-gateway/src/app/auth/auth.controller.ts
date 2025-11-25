@@ -1,7 +1,7 @@
 import { Controller, OnModuleInit, Post, Body, Get, UseGuards, Inject } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ClientGrpc } from '@nestjs/microservices';
-import { authPackage, mapVehicleTypeToProto } from '@uit-go-backend/shared';
+import { authPackage, mapVehicleTypeToProto, Role, success } from '@uit-go-backend/shared';
 import { LoginDto, RegisterUserDto, RegisterDriverDto } from './dto';
 import { firstValueFrom } from 'rxjs';
 import { SupabaseGuard } from '../../guards/auth/supabase.guard';
@@ -31,7 +31,7 @@ export class AuthController implements OnModuleInit {
         password: loginDto.password,
       })
     );
-    return response;
+    return success(response, 200, 'Login successful');
   }
 
   @Post('register/user')
@@ -44,7 +44,7 @@ export class AuthController implements OnModuleInit {
         phone: registerDto.phone,
       })
     );
-    return response;
+    return success(response, 201, 'User registered successfully');
   }
 
   @Post('register/driver')
@@ -62,7 +62,7 @@ export class AuthController implements OnModuleInit {
         vehicleColor: registerDto.vehicleColor,
       })
     );
-    return response;
+    return success(response, 201, 'Driver registered successfully');
   }
 
   @Get('logout')
@@ -71,7 +71,7 @@ export class AuthController implements OnModuleInit {
     const response = await firstValueFrom(
       this.authServiceClient.logout({})
     );
-    return response;
+    return success(response, 200, 'Logout successful');
   }
 
   @Get('check-verification')
@@ -80,14 +80,14 @@ export class AuthController implements OnModuleInit {
     const response = await firstValueFrom(
       this.authServiceClient.checkVerification({ email: user.email })
     );
-    return response;
+    return success(response, 200, 'Verification status retrieved successfully');
   }
 
   // for demo
   @Get('only-driver')
   @UseGuards(SupabaseGuard, RolesGuard)
-  @Roles('driver')
+  @Roles(Role.DRIVER)
   async onlyDriver(){
-    return {message: "If you see this message, you are authenticated as a driver!"};
+    return success(null, 200, "If you see this message, you are authenticated as a driver!");
   }
 }

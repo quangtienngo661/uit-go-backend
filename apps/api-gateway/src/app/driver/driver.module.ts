@@ -12,7 +12,7 @@ import { driverPackage } from '@uit-go-backend/shared';
         name: driverPackage.DRIVER_SERVICE_NAME,
         transport: Transport.GRPC,
         options: {
-          url: '0.0.0.0:3004',
+          url: 'driver-service:3004',
           package: driverPackage.DRIVER_PACKAGE_PACKAGE_NAME,
           protoPath: join(process.cwd(), 'libs/shared/src/lib/protos/driver.proto')
         }

@@ -6,15 +6,17 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
       // urls: [process.env.RABBITMQ_URL || 'amqp://guest:guest@rabbitmq:5672'],
-      urls: ['amqp://guest:guest@localhost:5672'],
+      urls: [configService.get<string>('RABBITMQ_URL')],
       queue: 'notif.q',
       queueOptions: {
         durable: true,
