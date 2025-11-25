@@ -30,7 +30,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -39,5 +39,5 @@ jobs:
           file: apps/${{ matrix.service }}/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.triggering_actor }}/uit-go-${{ matrix.service }}:latest
-            ghcr.io/${{ github.triggering_actor }}/uit-go-${{ matrix.service }}:${{ github.sha }}
+            ghcr.io/${{ github.actor }}/uit-go-${{ matrix.service }}:latest
+            ghcr.io/${{ github.actor }}/uit-go-${{ matrix.service }}:${{ github.sha }}
