@@ -58,6 +58,12 @@ variable "enable_mq" {
   description = "Enable Amazon MQ broker and RabbitMQ provider resources"
 }
 
+variable "enable_rds" {
+  type        = bool
+  default     = false
+  description = "Enable RDS instances (set true only when you want AWS DBs)"
+}
+
 variable "enable_redis" {
   type        = bool
   default     = false
