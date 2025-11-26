@@ -2,9 +2,9 @@ output "alb_dns_name" {
   value       = var.enable_alb && length(module.alb) > 0 ? module.alb[0].dns_name : ""
   description = "ALB DNS name (empty if ALB disabled)"
 }
-output "userdb_address" { value = module.rds_user.db_instance_address }
-output "tripdb_address" { value = module.rds_trip.db_instance_address }
-output "driverdb_address" { value = module.rds_driver.db_instance_address }
+output "userdb_address"   { value = var.enable_rds && length(module.rds_user) > 0 ? module.rds_user[0].db_instance_address : "" }
+output "tripdb_address"   { value = var.enable_rds && length(module.rds_trip) > 0 ? module.rds_trip[0].db_instance_address : "" }
+output "driverdb_address" { value = var.enable_rds && length(module.rds_driver) > 0 ? module.rds_driver[0].db_instance_address : "" }
 output "redis_endpoint" {
   value       = var.enable_redis && length(aws_elasticache_replication_group.redis) > 0 ? aws_elasticache_replication_group.redis[0].primary_endpoint_address : ""
   description = "Redis primary endpoint (empty if Redis disabled)"

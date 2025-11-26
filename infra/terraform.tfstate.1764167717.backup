@@ -1,7 +1,7 @@
 {
   "version": 4,
   "terraform_version": "1.13.5",
-  "serial": 428,
+  "serial": 427,
   "lineage": "9a1a5ede-3859-32cc-97e3-cafc78438ae8",
   "outputs": {
     "alb_dns_name": {
@@ -572,6 +572,77 @@
       "name": "rabbit",
       "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
       "instances": []
+    },
+    {
+      "mode": "managed",
+      "type": "aws_security_group",
+      "name": "alb",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:security-group/sg-065472784387386fe",
+            "description": "Managed by Terraform",
+            "egress": [
+              {
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "description": "",
+                "from_port": 0,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "-1",
+                "security_groups": [],
+                "self": false,
+                "to_port": 0
+              }
+            ],
+            "id": "sg-065472784387386fe",
+            "ingress": [
+              {
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "description": "",
+                "from_port": 80,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "tcp",
+                "security_groups": [],
+                "self": false,
+                "to_port": 80
+              }
+            ],
+            "name": "uit-go-dev-alb-sg",
+            "name_prefix": "",
+            "owner_id": "851725589148",
+            "revoke_rules_on_delete": false,
+            "tags": {
+              "Env": "dev",
+              "Owner": "se360-uit-go",
+              "Project": "uit-go",
+              "Service": "trip-service"
+            },
+            "tags_all": {
+              "Env": "dev",
+              "Owner": "se360-uit-go",
+              "Project": "uit-go",
+              "Service": "trip-service"
+            },
+            "timeouts": null,
+            "vpc_id": "vpc-0d5369c4050a57dea"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6OTAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0=",
+          "dependencies": [
+            "module.vpc.aws_vpc.this"
+          ]
+        }
+      ]
     },
     {
       "mode": "managed",

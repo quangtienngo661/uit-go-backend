@@ -147,7 +147,7 @@ resource "aws_security_group" "ecs_tasks" {
 }
 
 resource "aws_security_group" "db" {
-  name   = "${local.name_prefix}-rds-sg"
+  name   = "${local.name_prefix}-rds-sg-2"
   vpc_id = module.vpc.vpc_id
   ingress {
     from_port = 5432
@@ -213,9 +213,9 @@ resource "random_password" "db" {
 module "rds_user" {
   source  = "terraform-aws-modules/rds/aws"
   version = "~> 6.5"
+  count   = var.enable_rds ? 1 : 0
   identifier = "${local.name_prefix}-userdb"
   engine = "postgres"
-  engine_version = "15.6"
   instance_class = "db.t4g.micro"
   allocated_storage = 20
   db_name  = "userdb"
@@ -232,9 +232,9 @@ module "rds_user" {
 module "rds_trip" {
   source  = "terraform-aws-modules/rds/aws"
   version = "~> 6.5"
+  count   = var.enable_rds ? 1 : 0
   identifier = "${local.name_prefix}-tripdb"
   engine = "postgres"
-  engine_version = "15.6"
   instance_class = "db.t4g.micro"
   allocated_storage = 20
   db_name  = "tripdb"
@@ -251,9 +251,9 @@ module "rds_trip" {
 module "rds_driver" {
   source  = "terraform-aws-modules/rds/aws"
   version = "~> 6.5"
+  count   = var.enable_rds ? 1 : 0
   identifier = "${local.name_prefix}-driverdb"
   engine = "postgres"
-  engine_version = "15.6"
   instance_class = "db.t4g.micro"
   allocated_storage = 20
   db_name  = "driverdb"
@@ -419,27 +419,27 @@ locals {
     ]
     "user-service" = [
       { name = "PORT", value = tostring(local.service_cfg["user-service"].port) },
-      { name = "USERDB_HOST", value = module.rds_user.db_instance_address },
-      { name = "USERDB_PORT", value = "5432" },
-      { name = "USERDB_USERNAME", value = var.db_master_username },
-      { name = "USERDB_PASSWORD", value = coalesce(var.db_master_password, random_password.db.result) },
-      { name = "USERDB_DATABASE", value = "userdb" }
+      { name = "USERDB_HOST", value = var.enable_rds && length(module.rds_user) > 0 ? module.rds_user[0].db_instance_address : "" },
+      { name = "USERDB_PORT", value = var.enable_rds ? "5432" : "" },
+      { name = "USERDB_USERNAME", value = var.enable_rds ? var.db_master_username : "" },
+      { name = "USERDB_PASSWORD", value = var.enable_rds ? coalesce(var.db_master_password, random_password.db.result) : "" },
+      { name = "USERDB_DATABASE", value = var.enable_rds ? "userdb" : "" }
     ]
     "trip-service" = [
       { name = "PORT", value = tostring(local.service_cfg["trip-service"].port) },
-      { name = "TRIPDB_HOST", value = module.rds_trip.db_instance_address },
-      { name = "TRIPDB_PORT", value = "5432" },
-      { name = "TRIPDB_USERNAME", value = var.db_master_username },
-      { name = "TRIPDB_PASSWORD", value = coalesce(var.db_master_password, random_password.db.result) },
-      { name = "TRIPDB_DATABASE", value = "tripdb" }
+      { name = "TRIPDB_HOST", value = var.enable_rds && length(module.rds_trip) > 0 ? module.rds_trip[0].db_instance_address : "" },
+      { name = "TRIPDB_PORT", value = var.enable_rds ? "5432" : "" },
+      { name = "TRIPDB_USERNAME", value = var.enable_rds ? var.db_master_username : "" },
+      { name = "TRIPDB_PASSWORD", value = var.enable_rds ? coalesce(var.db_master_password, random_password.db.result) : "" },
+      { name = "TRIPDB_DATABASE", value = var.enable_rds ? "tripdb" : "" }
     ]
     "driver-service" = [
       { name = "PORT", value = tostring(local.service_cfg["driver-service"].port) },
-      { name = "DRIVERDB_HOST", value = module.rds_driver.db_instance_address },
-      { name = "DRIVERDB_PORT", value = "5432" },
-      { name = "DRIVERDB_USERNAME", value = var.db_master_username },
-      { name = "DRIVERDB_PASSWORD", value = coalesce(var.db_master_password, random_password.db.result) },
-      { name = "DRIVERDB_DATABASE", value = "driverdb" },
+      { name = "DRIVERDB_HOST", value = var.enable_rds && length(module.rds_driver) > 0 ? module.rds_driver[0].db_instance_address : "" },
+      { name = "DRIVERDB_PORT", value = var.enable_rds ? "5432" : "" },
+      { name = "DRIVERDB_USERNAME", value = var.enable_rds ? var.db_master_username : "" },
+      { name = "DRIVERDB_PASSWORD", value = var.enable_rds ? coalesce(var.db_master_password, random_password.db.result) : "" },
+      { name = "DRIVERDB_DATABASE", value = var.enable_rds ? "driverdb" : "" },
       { name = "REDIS_HOST", value = var.enable_redis ? aws_elasticache_replication_group.redis[0].primary_endpoint_address : "" },
       { name = "REDIS_PORT", value = var.enable_redis ? "6379" : "" }
     ]

@@ -1,14 +1,10 @@
 {
   "version": 4,
   "terraform_version": "1.13.5",
-  "serial": 428,
+  "serial": 236,
   "lineage": "9a1a5ede-3859-32cc-97e3-cafc78438ae8",
   "outputs": {
     "alb_dns_name": {
-      "value": "",
-      "type": "string"
-    },
-    "driverdb_address": {
       "value": "",
       "type": "string"
     },
@@ -25,14 +21,6 @@
       "type": "string"
     },
     "redis_endpoint": {
-      "value": "",
-      "type": "string"
-    },
-    "tripdb_address": {
-      "value": "",
-      "type": "string"
-    },
-    "userdb_address": {
       "value": "",
       "type": "string"
     }
@@ -149,11 +137,11 @@
         {
           "schema_version": 0,
           "attributes": {
-            "arn": "arn:aws:ce::851725589148:costcategory/05f5db15-a9f0-4bbb-8256-74d458b3cbce",
+            "arn": "arn:aws:ce::851725589148:costcategory/56663a52-41f4-4450-9381-34b10885d885",
             "default_value": "",
             "effective_end": "",
             "effective_start": "2025-11-01T00:00:00Z",
-            "id": "arn:aws:ce::851725589148:costcategory/05f5db15-a9f0-4bbb-8256-74d458b3cbce",
+            "id": "arn:aws:ce::851725589148:costcategory/56663a52-41f4-4450-9381-34b10885d885",
             "name": "UIT-Go-Project-Category",
             "rule": [
               {
@@ -479,6 +467,13 @@
     },
     {
       "mode": "managed",
+      "type": "aws_elasticache_replication_group",
+      "name": "redis",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": []
+    },
+    {
+      "mode": "managed",
       "type": "aws_elasticache_subnet_group",
       "name": "redis",
       "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
@@ -495,7 +490,7 @@
           "attributes": {
             "arn": "arn:aws:iam::851725589148:role/uit-go-dev-ecsTaskExec",
             "assume_role_policy": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"ecs-tasks.amazonaws.com\"}}],\"Version\":\"2012-10-17\"}",
-            "create_date": "2025-11-26T14:15:20Z",
+            "create_date": "2025-11-25T10:35:20Z",
             "description": "",
             "force_detach_policies": false,
             "id": "uit-go-dev-ecsTaskExec",
@@ -518,7 +513,7 @@
               "Owner": "se360-uit-go",
               "Project": "uit-go"
             },
-            "unique_id": "AROA4MTWNDKOGNDAHPOK2"
+            "unique_id": "AROA4MTWNDKOEKSVSOMHP"
           },
           "sensitive_attributes": [],
           "identity_schema_version": 0,
@@ -538,7 +533,7 @@
         {
           "schema_version": 0,
           "attributes": {
-            "id": "uit-go-dev-ecsTaskExec-20251126141522916000000004",
+            "id": "uit-go-dev-ecsTaskExec-20251125103521614500000004",
             "policy_arn": "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
             "role": "uit-go-dev-ecsTaskExec"
           },
@@ -576,9 +571,79 @@
     {
       "mode": "managed",
       "type": "aws_security_group",
-      "name": "db",
+      "name": "alb",
       "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
       "instances": []
+    },
+    {
+      "mode": "managed",
+      "type": "aws_security_group",
+      "name": "db",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:security-group/sg-07df42c887088cd80",
+            "description": "Managed by Terraform",
+            "egress": [
+              {
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "description": "",
+                "from_port": 0,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "-1",
+                "security_groups": [],
+                "self": false,
+                "to_port": 0
+              }
+            ],
+            "id": "sg-07df42c887088cd80",
+            "ingress": [
+              {
+                "cidr_blocks": [],
+                "description": "",
+                "from_port": 5432,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "tcp",
+                "security_groups": [
+                  "sg-0d651b091c390b286"
+                ],
+                "self": false,
+                "to_port": 5432
+              }
+            ],
+            "name": "uit-go-dev-rds-sg",
+            "name_prefix": "",
+            "owner_id": "851725589148",
+            "revoke_rules_on_delete": false,
+            "tags": {
+              "Env": "dev",
+              "Owner": "se360-uit-go",
+              "Project": "uit-go"
+            },
+            "tags_all": {
+              "Env": "dev",
+              "Owner": "se360-uit-go",
+              "Project": "uit-go"
+            },
+            "timeouts": null,
+            "vpc_id": "vpc-0d5369c4050a57dea"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6OTAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0=",
+          "dependencies": [
+            "aws_security_group.alb",
+            "aws_security_group.ecs_tasks",
+            "module.vpc.aws_vpc.this"
+          ]
+        }
+      ]
     },
     {
       "mode": "managed",
@@ -607,21 +672,7 @@
               }
             ],
             "id": "sg-0d651b091c390b286",
-            "ingress": [
-              {
-                "cidr_blocks": [],
-                "description": "",
-                "from_port": 3000,
-                "ipv6_cidr_blocks": [],
-                "prefix_list_ids": [],
-                "protocol": "tcp",
-                "security_groups": [
-                  "sg-065472784387386fe"
-                ],
-                "self": false,
-                "to_port": 3999
-              }
-            ],
+            "ingress": [],
             "name": "uit-go-dev-ecs-tasks-sg",
             "name_prefix": "",
             "owner_id": "851725589148",
@@ -661,7 +712,70 @@
       "type": "aws_security_group",
       "name": "redis",
       "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
-      "instances": []
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:security-group/sg-08ea399ad5ad2908c",
+            "description": "Managed by Terraform",
+            "egress": [
+              {
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "description": "",
+                "from_port": 0,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "-1",
+                "security_groups": [],
+                "self": false,
+                "to_port": 0
+              }
+            ],
+            "id": "sg-08ea399ad5ad2908c",
+            "ingress": [
+              {
+                "cidr_blocks": [],
+                "description": "",
+                "from_port": 6379,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "tcp",
+                "security_groups": [
+                  "sg-0d651b091c390b286"
+                ],
+                "self": false,
+                "to_port": 6379
+              }
+            ],
+            "name": "uit-go-dev-redis-sg",
+            "name_prefix": "",
+            "owner_id": "851725589148",
+            "revoke_rules_on_delete": false,
+            "tags": {
+              "Env": "dev",
+              "Owner": "se360-uit-go",
+              "Project": "uit-go"
+            },
+            "tags_all": {
+              "Env": "dev",
+              "Owner": "se360-uit-go",
+              "Project": "uit-go"
+            },
+            "timeouts": null,
+            "vpc_id": "vpc-0d5369c4050a57dea"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6OTAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0=",
+          "dependencies": [
+            "aws_security_group.alb",
+            "aws_security_group.ecs_tasks",
+            "module.vpc.aws_vpc.this"
+          ]
+        }
+      ]
     },
     {
       "mode": "managed",
@@ -674,7 +788,7 @@
           "attributes": {
             "arn": "arn:aws:servicediscovery:ap-southeast-1:851725589148:namespace/ns-ebncv4vejcqbchhe",
             "description": "UIT-Go internal service namespace",
-            "hosted_zone": "Z078619415SPZO33HLJ0B",
+            "hosted_zone": "Z08436543KEPK3256YXDH",
             "id": "ns-ebncv4vejcqbchhe",
             "name": "local",
             "tags": {},
@@ -1045,7 +1159,7 @@
         {
           "schema_version": 3,
           "attributes": {
-            "bcrypt_hash": "$2a$10$c1.7Lnmeg2YTBdeCSZjIe.k2Mv/UAKEXQxffm843MRsN897.q9p3a",
+            "bcrypt_hash": "$2a$10$Ck8tiMn1Uu7qjxAb5GWQf.Gso1fkd9qtZ5MVu3rFNnT44a1MUUCPC",
             "id": "none",
             "keepers": null,
             "length": 20,
@@ -1057,7 +1171,7 @@
             "number": true,
             "numeric": true,
             "override_special": null,
-            "result": "9Ed0eW\u003e2W_R1F\u0026Z?IX{D",
+            "result": "(YOhJ43t_#fP_*r3s!*6",
             "special": true,
             "upper": true
           },
@@ -1088,7 +1202,7 @@
         {
           "schema_version": 3,
           "attributes": {
-            "bcrypt_hash": "$2a$10$EaGf.1FeMH55krHcZ9TQWe7OSXyYOlMlvMW.vceXV2G.khuO1rf4W",
+            "bcrypt_hash": "$2a$10$HTNTxF5Z01.4zE7VVMejxOi7uNtafHIee8iiLm0awwTRefBaiTqGi",
             "id": "none",
             "keepers": null,
             "length": 20,
@@ -1100,7 +1214,7 @@
             "number": true,
             "numeric": true,
             "override_special": "!@#$%^\u0026*()-_+[]{}",
-            "result": "pHE3!0-*[3\u0026{Z^o@3Tot",
+            "result": "Kw]lozdbrQ5]ApcAZ7%_",
             "special": true,
             "upper": true
           },
@@ -1121,54 +1235,6 @@
           "identity_schema_version": 0
         }
       ]
-    },
-    {
-      "module": "module.alb[0]",
-      "mode": "managed",
-      "type": "aws_lambda_permission",
-      "name": "this",
-      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
-      "instances": []
-    },
-    {
-      "module": "module.alb[0]",
-      "mode": "managed",
-      "type": "aws_lb_target_group",
-      "name": "this",
-      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
-      "instances": []
-    },
-    {
-      "module": "module.alb[0]",
-      "mode": "managed",
-      "type": "aws_lb_target_group_attachment",
-      "name": "additional",
-      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
-      "instances": []
-    },
-    {
-      "module": "module.alb[0]",
-      "mode": "managed",
-      "type": "aws_lb_target_group_attachment",
-      "name": "this",
-      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
-      "instances": []
-    },
-    {
-      "module": "module.alb[0]",
-      "mode": "managed",
-      "type": "aws_vpc_security_group_egress_rule",
-      "name": "this",
-      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
-      "instances": []
-    },
-    {
-      "module": "module.alb[0]",
-      "mode": "managed",
-      "type": "aws_vpc_security_group_ingress_rule",
-      "name": "this",
-      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
-      "instances": []
     },
     {
       "module": "module.ecs.module.cluster",
@@ -1361,7 +1427,74 @@
       "instances": []
     },
     {
-      "module": "module.rds_driver[0].module.db_instance",
+      "module": "module.rds_driver.module.db_instance",
+      "mode": "data",
+      "type": "aws_iam_policy_document",
+      "name": "enhanced_monitoring",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "76086537",
+            "json": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Effect\": \"Allow\",\n      \"Action\": \"sts:AssumeRole\",\n      \"Principal\": {\n        \"Service\": \"monitoring.rds.amazonaws.com\"\n      }\n    }\n  ]\n}",
+            "minified_json": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"Service\":\"monitoring.rds.amazonaws.com\"}}]}",
+            "override_json": null,
+            "override_policy_documents": null,
+            "policy_id": null,
+            "source_json": null,
+            "source_policy_documents": null,
+            "statement": [
+              {
+                "actions": [
+                  "sts:AssumeRole"
+                ],
+                "condition": [],
+                "effect": "Allow",
+                "not_actions": [],
+                "not_principals": [],
+                "not_resources": [],
+                "principals": [
+                  {
+                    "identifiers": [
+                      "monitoring.rds.amazonaws.com"
+                    ],
+                    "type": "Service"
+                  }
+                ],
+                "resources": [],
+                "sid": ""
+              }
+            ],
+            "version": "2012-10-17"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "module": "module.rds_driver.module.db_instance",
+      "mode": "data",
+      "type": "aws_partition",
+      "name": "current",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "dns_suffix": "amazonaws.com",
+            "id": "aws",
+            "partition": "aws",
+            "reverse_dns_prefix": "com.amazonaws"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "module": "module.rds_driver.module.db_instance",
       "mode": "managed",
       "type": "aws_cloudwatch_log_group",
       "name": "this",
@@ -1369,7 +1502,7 @@
       "instances": []
     },
     {
-      "module": "module.rds_driver[0].module.db_instance",
+      "module": "module.rds_driver.module.db_instance",
       "mode": "managed",
       "type": "aws_iam_role",
       "name": "enhanced_monitoring",
@@ -1377,7 +1510,7 @@
       "instances": []
     },
     {
-      "module": "module.rds_driver[0].module.db_instance",
+      "module": "module.rds_driver.module.db_instance",
       "mode": "managed",
       "type": "aws_iam_role_policy_attachment",
       "name": "enhanced_monitoring",
@@ -1385,7 +1518,35 @@
       "instances": []
     },
     {
-      "module": "module.rds_driver[0].module.db_option_group",
+      "module": "module.rds_driver.module.db_instance",
+      "mode": "managed",
+      "type": "random_id",
+      "name": "snapshot_identifier",
+      "provider": "provider[\"registry.terraform.io/hashicorp/random\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "schema_version": 0,
+          "attributes": {
+            "b64_std": "Mv2KbA==",
+            "b64_url": "Mv2KbA",
+            "byte_length": 4,
+            "dec": "855476844",
+            "hex": "32fd8a6c",
+            "id": "Mv2KbA",
+            "keepers": {
+              "id": "uit-go-dev-driverdb",
+              "snapshot_identifier": null
+            },
+            "prefix": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "module": "module.rds_driver.module.db_option_group",
       "mode": "managed",
       "type": "aws_db_option_group",
       "name": "this",
@@ -1393,7 +1554,46 @@
       "instances": []
     },
     {
-      "module": "module.rds_driver[0].module.db_subnet_group",
+      "module": "module.rds_driver.module.db_parameter_group",
+      "mode": "managed",
+      "type": "aws_db_parameter_group",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:rds:ap-southeast-1:851725589148:pg:uit-go-dev-driverdb-20251125103518338400000003",
+            "description": "uit-go-dev-driverdb parameter group",
+            "family": "postgres16",
+            "id": "uit-go-dev-driverdb-20251125103518338400000003",
+            "name": "uit-go-dev-driverdb-20251125103518338400000003",
+            "name_prefix": "uit-go-dev-driverdb-",
+            "parameter": [],
+            "skip_destroy": false,
+            "tags": {
+              "Env": "dev",
+              "Name": "uit-go-dev-driverdb",
+              "Owner": "se360-uit-go",
+              "Project": "uit-go"
+            },
+            "tags_all": {
+              "Env": "dev",
+              "Name": "uit-go-dev-driverdb",
+              "Owner": "se360-uit-go",
+              "Project": "uit-go"
+            }
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "bnVsbA==",
+          "create_before_destroy": true
+        }
+      ]
+    },
+    {
+      "module": "module.rds_driver.module.db_subnet_group",
       "mode": "managed",
       "type": "aws_db_subnet_group",
       "name": "this",
@@ -1401,7 +1601,74 @@
       "instances": []
     },
     {
-      "module": "module.rds_trip[0].module.db_instance",
+      "module": "module.rds_trip.module.db_instance",
+      "mode": "data",
+      "type": "aws_iam_policy_document",
+      "name": "enhanced_monitoring",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "76086537",
+            "json": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Effect\": \"Allow\",\n      \"Action\": \"sts:AssumeRole\",\n      \"Principal\": {\n        \"Service\": \"monitoring.rds.amazonaws.com\"\n      }\n    }\n  ]\n}",
+            "minified_json": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"Service\":\"monitoring.rds.amazonaws.com\"}}]}",
+            "override_json": null,
+            "override_policy_documents": null,
+            "policy_id": null,
+            "source_json": null,
+            "source_policy_documents": null,
+            "statement": [
+              {
+                "actions": [
+                  "sts:AssumeRole"
+                ],
+                "condition": [],
+                "effect": "Allow",
+                "not_actions": [],
+                "not_principals": [],
+                "not_resources": [],
+                "principals": [
+                  {
+                    "identifiers": [
+                      "monitoring.rds.amazonaws.com"
+                    ],
+                    "type": "Service"
+                  }
+                ],
+                "resources": [],
+                "sid": ""
+              }
+            ],
+            "version": "2012-10-17"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "module": "module.rds_trip.module.db_instance",
+      "mode": "data",
+      "type": "aws_partition",
+      "name": "current",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "dns_suffix": "amazonaws.com",
+            "id": "aws",
+            "partition": "aws",
+            "reverse_dns_prefix": "com.amazonaws"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "module": "module.rds_trip.module.db_instance",
       "mode": "managed",
       "type": "aws_cloudwatch_log_group",
       "name": "this",
@@ -1409,7 +1676,7 @@
       "instances": []
     },
     {
-      "module": "module.rds_trip[0].module.db_instance",
+      "module": "module.rds_trip.module.db_instance",
       "mode": "managed",
       "type": "aws_iam_role",
       "name": "enhanced_monitoring",
@@ -1417,7 +1684,7 @@
       "instances": []
     },
     {
-      "module": "module.rds_trip[0].module.db_instance",
+      "module": "module.rds_trip.module.db_instance",
       "mode": "managed",
       "type": "aws_iam_role_policy_attachment",
       "name": "enhanced_monitoring",
@@ -1425,7 +1692,35 @@
       "instances": []
     },
     {
-      "module": "module.rds_trip[0].module.db_option_group",
+      "module": "module.rds_trip.module.db_instance",
+      "mode": "managed",
+      "type": "random_id",
+      "name": "snapshot_identifier",
+      "provider": "provider[\"registry.terraform.io/hashicorp/random\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "schema_version": 0,
+          "attributes": {
+            "b64_std": "IMt26Q==",
+            "b64_url": "IMt26Q",
+            "byte_length": 4,
+            "dec": "550205161",
+            "hex": "20cb76e9",
+            "id": "IMt26Q",
+            "keepers": {
+              "id": "uit-go-dev-tripdb",
+              "snapshot_identifier": null
+            },
+            "prefix": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "module": "module.rds_trip.module.db_option_group",
       "mode": "managed",
       "type": "aws_db_option_group",
       "name": "this",
@@ -1433,7 +1728,46 @@
       "instances": []
     },
     {
-      "module": "module.rds_trip[0].module.db_subnet_group",
+      "module": "module.rds_trip.module.db_parameter_group",
+      "mode": "managed",
+      "type": "aws_db_parameter_group",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:rds:ap-southeast-1:851725589148:pg:uit-go-dev-tripdb-20251125103518305700000001",
+            "description": "uit-go-dev-tripdb parameter group",
+            "family": "postgres16",
+            "id": "uit-go-dev-tripdb-20251125103518305700000001",
+            "name": "uit-go-dev-tripdb-20251125103518305700000001",
+            "name_prefix": "uit-go-dev-tripdb-",
+            "parameter": [],
+            "skip_destroy": false,
+            "tags": {
+              "Env": "dev",
+              "Name": "uit-go-dev-tripdb",
+              "Owner": "se360-uit-go",
+              "Project": "uit-go"
+            },
+            "tags_all": {
+              "Env": "dev",
+              "Name": "uit-go-dev-tripdb",
+              "Owner": "se360-uit-go",
+              "Project": "uit-go"
+            }
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "bnVsbA==",
+          "create_before_destroy": true
+        }
+      ]
+    },
+    {
+      "module": "module.rds_trip.module.db_subnet_group",
       "mode": "managed",
       "type": "aws_db_subnet_group",
       "name": "this",
@@ -1441,7 +1775,74 @@
       "instances": []
     },
     {
-      "module": "module.rds_user[0].module.db_instance",
+      "module": "module.rds_user.module.db_instance",
+      "mode": "data",
+      "type": "aws_iam_policy_document",
+      "name": "enhanced_monitoring",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "76086537",
+            "json": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Effect\": \"Allow\",\n      \"Action\": \"sts:AssumeRole\",\n      \"Principal\": {\n        \"Service\": \"monitoring.rds.amazonaws.com\"\n      }\n    }\n  ]\n}",
+            "minified_json": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"sts:AssumeRole\",\"Principal\":{\"Service\":\"monitoring.rds.amazonaws.com\"}}]}",
+            "override_json": null,
+            "override_policy_documents": null,
+            "policy_id": null,
+            "source_json": null,
+            "source_policy_documents": null,
+            "statement": [
+              {
+                "actions": [
+                  "sts:AssumeRole"
+                ],
+                "condition": [],
+                "effect": "Allow",
+                "not_actions": [],
+                "not_principals": [],
+                "not_resources": [],
+                "principals": [
+                  {
+                    "identifiers": [
+                      "monitoring.rds.amazonaws.com"
+                    ],
+                    "type": "Service"
+                  }
+                ],
+                "resources": [],
+                "sid": ""
+              }
+            ],
+            "version": "2012-10-17"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "module": "module.rds_user.module.db_instance",
+      "mode": "data",
+      "type": "aws_partition",
+      "name": "current",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "dns_suffix": "amazonaws.com",
+            "id": "aws",
+            "partition": "aws",
+            "reverse_dns_prefix": "com.amazonaws"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "module": "module.rds_user.module.db_instance",
       "mode": "managed",
       "type": "aws_cloudwatch_log_group",
       "name": "this",
@@ -1449,7 +1850,7 @@
       "instances": []
     },
     {
-      "module": "module.rds_user[0].module.db_instance",
+      "module": "module.rds_user.module.db_instance",
       "mode": "managed",
       "type": "aws_iam_role",
       "name": "enhanced_monitoring",
@@ -1457,7 +1858,7 @@
       "instances": []
     },
     {
-      "module": "module.rds_user[0].module.db_instance",
+      "module": "module.rds_user.module.db_instance",
       "mode": "managed",
       "type": "aws_iam_role_policy_attachment",
       "name": "enhanced_monitoring",
@@ -1465,7 +1866,35 @@
       "instances": []
     },
     {
-      "module": "module.rds_user[0].module.db_option_group",
+      "module": "module.rds_user.module.db_instance",
+      "mode": "managed",
+      "type": "random_id",
+      "name": "snapshot_identifier",
+      "provider": "provider[\"registry.terraform.io/hashicorp/random\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "schema_version": 0,
+          "attributes": {
+            "b64_std": "u4GHbQ==",
+            "b64_url": "u4GHbQ",
+            "byte_length": 4,
+            "dec": "3145828205",
+            "hex": "bb81876d",
+            "id": "u4GHbQ",
+            "keepers": {
+              "id": "uit-go-dev-userdb",
+              "snapshot_identifier": null
+            },
+            "prefix": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "module": "module.rds_user.module.db_option_group",
       "mode": "managed",
       "type": "aws_db_option_group",
       "name": "this",
@@ -1473,7 +1902,46 @@
       "instances": []
     },
     {
-      "module": "module.rds_user[0].module.db_subnet_group",
+      "module": "module.rds_user.module.db_parameter_group",
+      "mode": "managed",
+      "type": "aws_db_parameter_group",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:rds:ap-southeast-1:851725589148:pg:uit-go-dev-userdb-20251125103518305700000002",
+            "description": "uit-go-dev-userdb parameter group",
+            "family": "postgres16",
+            "id": "uit-go-dev-userdb-20251125103518305700000002",
+            "name": "uit-go-dev-userdb-20251125103518305700000002",
+            "name_prefix": "uit-go-dev-userdb-",
+            "parameter": [],
+            "skip_destroy": false,
+            "tags": {
+              "Env": "dev",
+              "Name": "uit-go-dev-userdb",
+              "Owner": "se360-uit-go",
+              "Project": "uit-go"
+            },
+            "tags_all": {
+              "Env": "dev",
+              "Name": "uit-go-dev-userdb",
+              "Owner": "se360-uit-go",
+              "Project": "uit-go"
+            }
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "private": "bnVsbA==",
+          "create_before_destroy": true
+        }
+      ]
+    },
+    {
+      "module": "module.rds_user.module.db_subnet_group",
       "mode": "managed",
       "type": "aws_db_subnet_group",
       "name": "this",
@@ -1608,10 +2076,10 @@
             ],
             "owner_id": "851725589148",
             "subnet_ids": [
-              "subnet-028a731185b9bb9ae",
-              "subnet-038cd4d89ddd8e81f",
-              "subnet-04ec9412a3d18a774",
-              "subnet-0b51e2af10937ad3d"
+              "subnet-03fcda62a855cbab2",
+              "subnet-06067f15c175ef0fe",
+              "subnet-0d5b0772747cfd3b9",
+              "subnet-0f5f7dcdea477b880"
             ],
             "tags": {
               "Env": "dev",
@@ -1751,24 +2219,24 @@
           "schema_version": 0,
           "attributes": {
             "address": null,
-            "allocation_id": "eipalloc-0d311e349f98c5a70",
-            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:elastic-ip/eipalloc-0d311e349f98c5a70",
+            "allocation_id": "eipalloc-060ce32cf5a29ae90",
+            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:elastic-ip/eipalloc-060ce32cf5a29ae90",
             "associate_with_private_ip": null,
-            "association_id": "eipassoc-03c5f9c1b38774b8c",
+            "association_id": "eipassoc-0cc946e1b84037f46",
             "carrier_ip": "",
             "customer_owned_ip": "",
             "customer_owned_ipv4_pool": "",
             "domain": "vpc",
-            "id": "eipalloc-0d311e349f98c5a70",
+            "id": "eipalloc-060ce32cf5a29ae90",
             "instance": "",
             "ipam_pool_id": null,
             "network_border_group": "ap-southeast-1",
-            "network_interface": "eni-04ddd7f953dc9502f",
-            "private_dns": "ip-10-20-4-62.ap-southeast-1.compute.internal",
-            "private_ip": "10.20.4.62",
+            "network_interface": "eni-0614add4c613c5a89",
+            "private_dns": "ip-10-20-7-20.ap-southeast-1.compute.internal",
+            "private_ip": "10.20.7.20",
             "ptr_record": "",
-            "public_dns": "ec2-47-130-125-108.ap-southeast-1.compute.amazonaws.com",
-            "public_ip": "47.130.125.108",
+            "public_dns": "ec2-54-251-73-67.ap-southeast-1.compute.amazonaws.com",
+            "public_ip": "54.251.73.67",
             "public_ipv4_pool": "amazon",
             "tags": {
               "Env": "dev",
@@ -1848,8 +2316,8 @@
           "index_key": 0,
           "schema_version": 0,
           "attributes": {
-            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:internet-gateway/igw-0e4735341170f3e9a",
-            "id": "igw-0e4735341170f3e9a",
+            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:internet-gateway/igw-002b5cb6a72a61ba1",
+            "id": "igw-002b5cb6a72a61ba1",
             "owner_id": "851725589148",
             "tags": {
               "Env": "dev",
@@ -1888,17 +2356,17 @@
           "index_key": 0,
           "schema_version": 0,
           "attributes": {
-            "allocation_id": "eipalloc-0d311e349f98c5a70",
-            "association_id": "eipassoc-03c5f9c1b38774b8c",
+            "allocation_id": "eipalloc-060ce32cf5a29ae90",
+            "association_id": "eipassoc-0cc946e1b84037f46",
             "connectivity_type": "public",
-            "id": "nat-097375c3806f4a9b8",
-            "network_interface_id": "eni-04ddd7f953dc9502f",
-            "private_ip": "10.20.4.62",
-            "public_ip": "47.130.125.108",
+            "id": "nat-04667c9d98b73d1c4",
+            "network_interface_id": "eni-0614add4c613c5a89",
+            "private_ip": "10.20.7.20",
+            "public_ip": "54.251.73.67",
             "secondary_allocation_ids": [],
             "secondary_private_ip_address_count": 0,
             "secondary_private_ip_addresses": [],
-            "subnet_id": "subnet-038cd4d89ddd8e81f",
+            "subnet_id": "subnet-03fcda62a855cbab2",
             "tags": {
               "Env": "dev",
               "Name": "uit-go-dev-vpc-ap-southeast-1a",
@@ -2169,14 +2637,14 @@
             "destination_prefix_list_id": "",
             "egress_only_gateway_id": "",
             "gateway_id": "",
-            "id": "r-rtb-0ac232093d3a168c21080289494",
+            "id": "r-rtb-061c3ed220d1964581080289494",
             "instance_id": "",
             "instance_owner_id": "",
             "local_gateway_id": "",
-            "nat_gateway_id": "nat-097375c3806f4a9b8",
+            "nat_gateway_id": "nat-04667c9d98b73d1c4",
             "network_interface_id": "",
             "origin": "CreateRoute",
-            "route_table_id": "rtb-0ac232093d3a168c2",
+            "route_table_id": "rtb-061c3ed220d196458",
             "state": "active",
             "timeouts": {
               "create": "5m",
@@ -2220,15 +2688,15 @@
             "destination_ipv6_cidr_block": "",
             "destination_prefix_list_id": "",
             "egress_only_gateway_id": "",
-            "gateway_id": "igw-0e4735341170f3e9a",
-            "id": "r-rtb-013cb5290e293b5001080289494",
+            "gateway_id": "igw-002b5cb6a72a61ba1",
+            "id": "r-rtb-034ff900b79eb3b241080289494",
             "instance_id": "",
             "instance_owner_id": "",
             "local_gateway_id": "",
             "nat_gateway_id": "",
             "network_interface_id": "",
             "origin": "CreateRoute",
-            "route_table_id": "rtb-013cb5290e293b500",
+            "route_table_id": "rtb-034ff900b79eb3b24",
             "state": "active",
             "timeouts": {
               "create": "5m",
@@ -2295,8 +2763,8 @@
           "index_key": 0,
           "schema_version": 0,
           "attributes": {
-            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:route-table/rtb-0ac232093d3a168c2",
-            "id": "rtb-0ac232093d3a168c2",
+            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:route-table/rtb-061c3ed220d196458",
+            "id": "rtb-061c3ed220d196458",
             "owner_id": "851725589148",
             "propagating_vgws": [],
             "route": [
@@ -2309,7 +2777,7 @@
                 "gateway_id": "",
                 "ipv6_cidr_block": "",
                 "local_gateway_id": "",
-                "nat_gateway_id": "nat-097375c3806f4a9b8",
+                "nat_gateway_id": "nat-04667c9d98b73d1c4",
                 "network_interface_id": "",
                 "transit_gateway_id": "",
                 "vpc_endpoint_id": "",
@@ -2353,8 +2821,8 @@
           "index_key": 0,
           "schema_version": 0,
           "attributes": {
-            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:route-table/rtb-013cb5290e293b500",
-            "id": "rtb-013cb5290e293b500",
+            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:route-table/rtb-034ff900b79eb3b24",
+            "id": "rtb-034ff900b79eb3b24",
             "owner_id": "851725589148",
             "propagating_vgws": [],
             "route": [
@@ -2364,7 +2832,7 @@
                 "core_network_arn": "",
                 "destination_prefix_list_id": "",
                 "egress_only_gateway_id": "",
-                "gateway_id": "igw-0e4735341170f3e9a",
+                "gateway_id": "igw-002b5cb6a72a61ba1",
                 "ipv6_cidr_block": "",
                 "local_gateway_id": "",
                 "nat_gateway_id": "",
@@ -2452,9 +2920,9 @@
           "schema_version": 0,
           "attributes": {
             "gateway_id": "",
-            "id": "rtbassoc-0cb02864f8993f5fd",
-            "route_table_id": "rtb-0ac232093d3a168c2",
-            "subnet_id": "subnet-0b51e2af10937ad3d",
+            "id": "rtbassoc-0772ec5f8b0ab96ca",
+            "route_table_id": "rtb-061c3ed220d196458",
+            "subnet_id": "subnet-06067f15c175ef0fe",
             "timeouts": null
           },
           "sensitive_attributes": [],
@@ -2473,9 +2941,9 @@
           "schema_version": 0,
           "attributes": {
             "gateway_id": "",
-            "id": "rtbassoc-04bf6e56f608e8690",
-            "route_table_id": "rtb-0ac232093d3a168c2",
-            "subnet_id": "subnet-04ec9412a3d18a774",
+            "id": "rtbassoc-0600dacbba257282b",
+            "route_table_id": "rtb-061c3ed220d196458",
+            "subnet_id": "subnet-0d5b0772747cfd3b9",
             "timeouts": null
           },
           "sensitive_attributes": [],
@@ -2503,9 +2971,9 @@
           "schema_version": 0,
           "attributes": {
             "gateway_id": "",
-            "id": "rtbassoc-0dd40c2b91de4c1d9",
-            "route_table_id": "rtb-013cb5290e293b500",
-            "subnet_id": "subnet-038cd4d89ddd8e81f",
+            "id": "rtbassoc-0324ca0decfaca151",
+            "route_table_id": "rtb-034ff900b79eb3b24",
+            "subnet_id": "subnet-03fcda62a855cbab2",
             "timeouts": null
           },
           "sensitive_attributes": [],
@@ -2524,9 +2992,9 @@
           "schema_version": 0,
           "attributes": {
             "gateway_id": "",
-            "id": "rtbassoc-0b5ef58893edee103",
-            "route_table_id": "rtb-013cb5290e293b500",
-            "subnet_id": "subnet-028a731185b9bb9ae",
+            "id": "rtbassoc-0d794d9e344864754",
+            "route_table_id": "rtb-034ff900b79eb3b24",
+            "subnet_id": "subnet-0f5f7dcdea477b880",
             "timeouts": null
           },
           "sensitive_attributes": [],
@@ -2601,7 +3069,7 @@
           "index_key": 0,
           "schema_version": 1,
           "attributes": {
-            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:subnet/subnet-0b51e2af10937ad3d",
+            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:subnet/subnet-06067f15c175ef0fe",
             "assign_ipv6_address_on_creation": false,
             "availability_zone": "ap-southeast-1a",
             "availability_zone_id": "apse1-az2",
@@ -2611,7 +3079,7 @@
             "enable_lni_at_device_index": 0,
             "enable_resource_name_dns_a_record_on_launch": false,
             "enable_resource_name_dns_aaaa_record_on_launch": false,
-            "id": "subnet-0b51e2af10937ad3d",
+            "id": "subnet-06067f15c175ef0fe",
             "ipv6_cidr_block": "",
             "ipv6_cidr_block_association_id": "",
             "ipv6_native": false,
@@ -2648,7 +3116,7 @@
           "index_key": 1,
           "schema_version": 1,
           "attributes": {
-            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:subnet/subnet-04ec9412a3d18a774",
+            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:subnet/subnet-0d5b0772747cfd3b9",
             "assign_ipv6_address_on_creation": false,
             "availability_zone": "ap-southeast-1b",
             "availability_zone_id": "apse1-az1",
@@ -2658,7 +3126,7 @@
             "enable_lni_at_device_index": 0,
             "enable_resource_name_dns_a_record_on_launch": false,
             "enable_resource_name_dns_aaaa_record_on_launch": false,
-            "id": "subnet-04ec9412a3d18a774",
+            "id": "subnet-0d5b0772747cfd3b9",
             "ipv6_cidr_block": "",
             "ipv6_cidr_block_association_id": "",
             "ipv6_native": false,
@@ -2704,7 +3172,7 @@
           "index_key": 0,
           "schema_version": 1,
           "attributes": {
-            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:subnet/subnet-038cd4d89ddd8e81f",
+            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:subnet/subnet-03fcda62a855cbab2",
             "assign_ipv6_address_on_creation": false,
             "availability_zone": "ap-southeast-1a",
             "availability_zone_id": "apse1-az2",
@@ -2714,7 +3182,7 @@
             "enable_lni_at_device_index": 0,
             "enable_resource_name_dns_a_record_on_launch": false,
             "enable_resource_name_dns_aaaa_record_on_launch": false,
-            "id": "subnet-038cd4d89ddd8e81f",
+            "id": "subnet-03fcda62a855cbab2",
             "ipv6_cidr_block": "",
             "ipv6_cidr_block_association_id": "",
             "ipv6_native": false,
@@ -2751,7 +3219,7 @@
           "index_key": 1,
           "schema_version": 1,
           "attributes": {
-            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:subnet/subnet-028a731185b9bb9ae",
+            "arn": "arn:aws:ec2:ap-southeast-1:851725589148:subnet/subnet-0f5f7dcdea477b880",
             "assign_ipv6_address_on_creation": false,
             "availability_zone": "ap-southeast-1b",
             "availability_zone_id": "apse1-az1",
@@ -2761,7 +3229,7 @@
             "enable_lni_at_device_index": 0,
             "enable_resource_name_dns_a_record_on_launch": false,
             "enable_resource_name_dns_aaaa_record_on_launch": false,
-            "id": "subnet-028a731185b9bb9ae",
+            "id": "subnet-0f5f7dcdea477b880",
             "ipv6_cidr_block": "",
             "ipv6_cidr_block_association_id": "",
             "ipv6_native": false,
