@@ -15,7 +15,8 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@uit-go-backend/shared": ["libs/shared/src/index.ts"]
+      "@uit-go-backend/shared": ["libs/shared/src/index.ts"],
+      "@uit-go-backend/supabase-storage": ["libs/supabase-storage/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
