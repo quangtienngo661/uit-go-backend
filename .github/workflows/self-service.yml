@@ -1,0 +1,103 @@
+name: Self-Service Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service to build/deploy"
+        required: true
+        default: "api-gateway"
+        type: choice
+        options:
+          - api-gateway
+          - auth-service
+          - user-service
+          - trip-service
+          - driver-service
+          - notification-service
+      environment:
+        description: "Stack environment (matches infra/stacks/* folder)"
+        required: true
+        default: "dev"
+      image_tag:
+        description: "Docker tag to push"
+        required: false
+        default: "latest"
+      apply:
+        description: "Apply Terraform (true) or just plan (false)"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+concurrency:
+  group: self-service-${{ github.event.inputs.environment }}-${{ github.event.inputs.service }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      SERVICE: ${{ github.event.inputs.service }}
+      ENVIRONMENT: ${{ github.event.inputs.environment }}
+      IMAGE_TAG: ${{ github.event.inputs.image_tag }}
+      APPLY: ${{ github.event.inputs.apply }}
+      AWS_REGION: ap-southeast-1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/${{ env.SERVICE }}/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/uit-go-${{ env.SERVICE }}:${{ env.IMAGE_TAG }}
+            ghcr.io/${{ github.repository_owner }}/uit-go-${{ env.SERVICE }}:${{ github.sha }}
+
+      - name: Terraform init
+        working-directory: infra/stacks/${{ env.ENVIRONMENT }}
+        run: terraform init -upgrade
+
+      - name: Terraform plan
+        working-directory: infra/stacks/${{ env.ENVIRONMENT }}
+        env:
+          TF_VAR_region: ${{ env.AWS_REGION }}
+          TF_VAR_container_image_map: |
+            {"${{ env.SERVICE }}": "ghcr.io/${{ github.repository_owner }}/uit-go-${{ env.SERVICE }}:${{ github.sha }}"}
+        run: terraform plan
+
+      - name: Terraform apply
+        if: env.APPLY == 'true'
+        working-directory: infra/stacks/${{ env.ENVIRONMENT }}
+        env:
+          TF_VAR_region: ${{ env.AWS_REGION }}
+          TF_VAR_container_image_map: |
+            {"${{ env.SERVICE }}": "ghcr.io/${{ github.repository_owner }}/uit-go-${{ env.SERVICE }}:${{ github.sha }}"}
+        run: terraform apply -auto-approve
