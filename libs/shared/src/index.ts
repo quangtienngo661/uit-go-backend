@@ -9,3 +9,4 @@ export * as authPackage from './lib/gen/auth';
 export * as commonPackage from './lib/gen/common'
 export * from './lib/mock-data/mock-email'
 export * from './lib/helpers/response'
+export * from './lib/helpers/sanitize-filename'

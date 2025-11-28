@@ -4,6 +4,7 @@ import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { DriverProfile } from './entities/driver-profile.entity';
+import {SupabaseStorageModule} from "@uit-go-backend/supabase-storage";
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, DriverProfile])],
