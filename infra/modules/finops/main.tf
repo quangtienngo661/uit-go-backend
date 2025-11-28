@@ -51,9 +51,7 @@ variable "tags" {
 }
 
 locals {
-  budget_emails = length(var.budget_alert_emails) > 0
-    ? var.budget_alert_emails
-    : (var.finops_team_email != "" ? [var.finops_team_email] : [])
+  budget_emails = length(var.budget_alert_emails) > 0 ? var.budget_alert_emails : (var.finops_team_email != "" ? [var.finops_team_email] : [])
 }
 
 variable "service_names" {
