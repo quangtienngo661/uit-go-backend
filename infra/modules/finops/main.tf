@@ -50,6 +50,11 @@ variable "tags" {
   default = {}
 }
 
+variable "enable_ecs_alarm" {
+  type    = bool
+  default = true
+}
+
 locals {
   budget_emails = length(var.budget_alert_emails) > 0 ? var.budget_alert_emails : (var.finops_team_email != "" ? [var.finops_team_email] : [])
 }
@@ -214,7 +219,7 @@ resource "aws_ce_cost_category" "project_category" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "ecs_high_cpu" {
-  count               = var.cluster_name != "" ? 1 : 0
+  count               = var.enable_ecs_alarm ? 1 : 0
   alarm_name          = "${var.name_prefix}-ecs-high-cpu"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
