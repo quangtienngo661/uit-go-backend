@@ -8,6 +8,8 @@ import {
   Delete,
   ParseIntPipe,
   UseGuards,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -19,6 +21,8 @@ import { UpdateDriverProfileDto } from './dto/update-driver-profile.dto';
 import { Role, success } from '@uit-go-backend/shared';
 import { RolesGuard } from '../../guards/auth/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import * as multer from 'multer';
 
 @Controller('users')
 @UseGuards(SupabaseGuard, RolesGuard)
@@ -35,8 +39,12 @@ export class UserController {
 
   @Post('passengers')
   @Roles(Role.PASSENGER)
-  async createPassenger(@Body() createUserDto: CreateUserDto) {
-    const result = await this.userService.createPassenger(createUserDto);
+  @UseInterceptors(FileInterceptor('image', { storage: multer.memoryStorage() }))
+  async createPassenger(@Body() createUserDto: CreateUserDto, @UploadedFile() image?: Express.Multer.File) {
+    const imageBuffer = image?.buffer;
+    const imageName = image?.originalname;
+
+    const result = await this.userService.createPassenger(createUserDto, imageBuffer, imageName);
     return success(result, 201, 'Passenger created successfully');
   }
 
@@ -77,8 +85,11 @@ export class UserController {
 
   @Patch('passengers/:id')
   @Roles(Role.PASSENGER)
-  async updatePassenger(@Param('id') id: string,@Body() updateUserDto: UpdateUserDto) {
-    const result = await this.userService.updatePassenger(id, updateUserDto);
+  @UseInterceptors(FileInterceptor('image', { storage: multer.memoryStorage() }))
+  async updatePassenger(@Param('id') id: string,@Body() updateUserDto: UpdateUserDto, @UploadedFile() image?: Express.Multer.File) {
+    const imageBuffer = image?.buffer;
+    const imageName = image?.originalname;
+    const result = await this.userService.updatePassenger(id, updateUserDto, imageBuffer, imageName);
     return success(result, 200, 'Passenger updated successfully');
   }
 
@@ -118,10 +129,13 @@ export class UserController {
 
   @Patch('current-profile')
   @Roles(Role.PASSENGER, Role.DRIVER)
-  async updateCurrentProfile(@CurrentUser() user: any, @Body() body: any) {
+  @UseInterceptors(FileInterceptor('image', { storage: multer.memoryStorage() }))
+  async updateCurrentProfile(@CurrentUser() user: any, @Body() body: any, @UploadedFile() image?: Express.Multer.File) {
+    const imageBuffer = image?.buffer;
+    const imageName = image?.originalname;
     let result;
     if(user?.role === Role.PASSENGER){
-      result = await this.userService.updatePassenger(user.id, body);
+      result = await this.userService.updatePassenger(user.id, body, imageBuffer, imageName);
     } else {
       result = await this.userService.updateDriverProfileByUserId(user.id, body);
     }

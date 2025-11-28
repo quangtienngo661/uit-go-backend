@@ -4,17 +4,34 @@ import { firstValueFrom, timeout } from 'rxjs';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateDriverProfileDto } from './dto/create-driver-profile.dto';
+import { SupabaseStorageService } from '@uit-go-backend/supabase-storage';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
 
   constructor(
-    @Inject('USER_SERVICE') private readonly userClient: ClientProxy
+    @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
+    private readonly supabaseStorageService: SupabaseStorageService,
+    private readonly configService: ConfigService,
   ) {}
 
-  async createPassenger(data: CreateUserDto) {
-
+  async createPassenger(data: CreateUserDto, imageBuffer?: Buffer, imageName?: string) {
+    if (imageBuffer && imageName) {
+      const avatarBucketName =
+        this.configService.get<string>('SUPABASE_AVATAR_BUCKET_NAME') || 'avatars';
+      try {
+        const imageUrl = await this.supabaseStorageService.uploadImageFromBuffer(
+          imageBuffer,
+          imageName,
+          avatarBucketName,
+        );
+        data.avatarUrl = imageUrl || data.avatarUrl;
+      } catch (error) {
+        console.error('Error uploading image to Supabase:', error);
+      }
+    }
     try {
       const result = await firstValueFrom(
         this.userClient.send({ cmd: 'createPassenger' }, data).pipe(
@@ -46,7 +63,21 @@ export class UserService {
     );
   }
 
-  async updatePassenger(id: string, data: UpdateUserDto) {
+  async updatePassenger(id: string, data: UpdateUserDto, imageBuffer?: Buffer, imageName?: string) {
+    if (imageBuffer && imageName) {
+      const avatarBucketName =
+        this.configService.get<string>('SUPABASE_AVATAR_BUCKET_NAME') || 'avatars';
+      try {
+        const imageUrl = await this.supabaseStorageService.uploadImageFromBuffer(
+          imageBuffer,
+          imageName,
+          avatarBucketName,
+        );
+        data.avatarUrl = imageUrl || data.avatarUrl;
+      } catch (error) {
+        console.error('Error uploading image to Supabase:', error);
+      }
+    }
     return firstValueFrom(
       this.userClient.send({ cmd: 'updatePassenger' }, { id, ...data })
     );

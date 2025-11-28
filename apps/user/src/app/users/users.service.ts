@@ -8,6 +8,8 @@ import { DriverProfile } from './entities/driver-profile.entity';
 import { CreateDriverProfileDto } from './dto/create-driver-profile.dto';
 import { UpdateDriverProfileDto } from './dto/update-driver-profile.dto';
 import { Role } from '@uit-go-backend/shared';
+import { SupabaseStorageService } from '@uit-go-backend/supabase-storage';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UsersService {
@@ -27,6 +29,10 @@ export class UsersService {
     const user = this.userRepository.create({
       ...createUserDto,
     });
+    if (createUserDto.avatarUrl) {
+      user.avatarUrl = createUserDto.avatarUrl;
+    }
+
     return this.userRepository.save(user);
   }
 
@@ -51,6 +57,9 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     Object.assign(user, updateUserDto);
+    if (updateUserDto.avatarUrl) {
+      user.avatarUrl = updateUserDto.avatarUrl;
+    }
     return this.userRepository.save(user);
   }
 
