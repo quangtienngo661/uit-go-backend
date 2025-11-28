@@ -72,15 +72,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: apps/${{ env.SERVICE }}/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/uit-go-${{ env.SERVICE }}:${{ env.IMAGE_TAG }}
-            ghcr.io/${{ github.repository_owner }}/uit-go-${{ env.SERVICE }}:${{ github.sha }}
+      # - name: Build and push image
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: .
+      #     file: apps/${{ env.SERVICE }}/Dockerfile
+      #     push: true
+      #     tags: |
+      #       ghcr.io/${{ github.repository_owner }}/uit-go-${{ env.SERVICE }}:${{ env.IMAGE_TAG }}
+      #       ghcr.io/${{ github.repository_owner }}/uit-go-${{ env.SERVICE }}:${{ github.sha }}
 
       - name: Terraform init
         working-directory: infra/stacks/${{ env.ENVIRONMENT }}

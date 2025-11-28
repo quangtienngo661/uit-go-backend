@@ -10,7 +10,7 @@
 
 ### ✅ 1. Mã nguồn (Source Code)
 
-- **Repository:** https://github.com/quangtienngo661/uit-go-backend
+- **Repository:** https://github.com/se360-uit-go/uit-go-backend
 - **Status:** Public, professionally structured
 - **Cấu trúc:** Nx monorepo với 6 microservices + shared libraries
 - **Technologies:** NestJS, TypeScript, PostgreSQL, Redis, RabbitMQ, Docker
@@ -164,7 +164,7 @@
 
 ### Requirement 1: Link repository GitHub công khai
 
-✅ **Done:** https://github.com/quangtienngo661/uit-go-backend
+✅ **Done:** https://github.com/se360-uit-go/uit-go-backend
 
 - Public repository
 - Professional structure (Nx monorepo)

@@ -13,7 +13,7 @@
 - **Ngô Quang Tiến** (23521574) - Project Architecture, Driver Service, Trip Service, Database Design
 - **Nguyễn Hữu Duy** (23520374) - Notification Service, RabbitMQ Integration
 
-**Repository:** https://github.com/quangtienngo661/uit-go-backend  
+**Repository:** https://github.com/se360-uit-go/uit-go-backend  
 **Report Type:** Final Semester Technical Report  
 **Report Date:** December 2025  
 **Project Status:** ✅ Production-Ready (Local), 🚧 AWS Deployment Ready
@@ -1475,7 +1475,7 @@ The **UIT-Go** project demonstrates that effective System Engineering requires:
 **Report Status:** ✅ Final  
 **Word Count:** ~7,500 words (approximately 15 pages)  
 **Last Updated:** November 2025  
-**Repository:** https://github.com/quangtienngo661/uit-go-backend  
+**Repository:** https://github.com/se360-uit-go/uit-go-backend  
 **Team Contact:** 23520427@gm.uit.edu.vn
 
 ---

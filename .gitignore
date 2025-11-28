@@ -56,3 +56,8 @@ infra/.terraform
 
 osrm
 LEARNING
+
+# Terraform build files
+*.tfstate
+*.tfstate.backup
+.terraform

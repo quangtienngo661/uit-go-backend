@@ -695,7 +695,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For questions or support, please reach out to:
 
 - **Email**: 23520427@gm.uit.edu.vn
-- **Repository**: https://github.com/quangtienngo661/uit-go-backend
+- **Repository**: https://github.com/se360-uit-go/uit-go-backend
 
 ---
 
