@@ -5,6 +5,7 @@
     "declaration": true,
     "types": ["node"],
     "target": "es2021",
+    "rootDir": "../..",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strictNullChecks": true,
