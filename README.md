@@ -90,28 +90,34 @@ UIT-Go follows a **microservices cloud-native pattern** with the following servi
 ## 🛠 Technology Stack
 
 ### Core Framework
+
 - **NestJS** - Progressive Node.js framework
 - **TypeScript** - Type-safe development
 - **Nx** - Monorepo management and build orchestration
 
 ### Databases
+
 - **PostgreSQL 17** - Primary database (3 instances: user-db, trip-db, driver-db)
 - **Redis 7** - Geospatial indexing for driver locations
 
 ### Messaging & Communication
+
 - **RabbitMQ** - Asynchronous event bus (topic exchange)
 - **gRPC** - High-performance inter-service communication (Trip ↔ Driver)
 - **REST** - Public API and general inter-service communication
 
 ### Routing & Navigation
+
 - **OSRM** - Open Source Routing Machine for route calculation and navigation
 
 ### Infrastructure
+
 - **Docker & Docker Compose** - Containerization
 - **Terraform** - Infrastructure as Code (IaC) - beta version
 - **Supabase** - Authentication BaaS
 
 ### Libraries & Tools
+
 - **TypeORM** - Database ORM and migrations
 - **class-validator** - DTO validation
 - **passport-jwt** - JWT authentication
@@ -132,6 +138,7 @@ Before you begin, ensure you have the following installed:
 - **Supabase Account** - [Sign up](https://supabase.com/) for authentication service
 
 ### Optional
+
 - **Visual Studio Code** with Nx Console extension
 - **pgAdmin** or **DBeaver** for database management
 - **Postman** or **Insomnia** for API testing
@@ -143,7 +150,7 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/quangtienngo661/uit-go-backend.git
+git clone https://github.com/se360-uit-go/uit-go-backend.git
 cd uit-go-backend
 ```
 
@@ -251,17 +258,20 @@ Download pre-processed OSRM data to skip 5-10 minutes processing:
 Run the automated setup script:
 
 **Windows:**
+
 ```powershell
 .\scripts\setup-osrm.ps1
 ```
 
 **Linux/Mac:**
+
 ```bash
 chmod +x scripts/setup-osrm.sh
 ./scripts/setup-osrm.sh
 ```
 
 The script will:
+
 1. Download Vietnam OSM data (~316 MB)
 2. Process the data (extract, partition, customize)
 3. Start OSRM server at http://localhost:5050
@@ -285,6 +295,7 @@ docker-compose up -d --build
 ```
 
 This will start:
+
 - ✅ 3x PostgreSQL databases (ports 5433, 5434, 5435)
 - ✅ Redis (port 6379)
 - ✅ RabbitMQ (port 5672, management UI on 15672)
@@ -292,6 +303,7 @@ This will start:
 - ✅ All 6 microservices
 
 **Access Points:**
+
 - API Gateway: http://localhost:3000
 - RabbitMQ Management: http://localhost:15672 (admin/admin123)
 - OSRM API: http://localhost:5050
@@ -402,6 +414,7 @@ curl -X POST http://localhost:3000/trips \
 ```
 
 **What happens behind the scenes:**
+
 1. API Gateway → Trip Service (REST)
 2. Trip Service → RabbitMQ (`trip.created` event)
 3. Driver Service consumes event → Searches nearby drivers (Redis Geospatial)
@@ -411,11 +424,13 @@ curl -X POST http://localhost:3000/trips \
 ### 4. Test RabbitMQ Message Flow
 
 Access RabbitMQ Management UI:
+
 - URL: http://localhost:15672
 - Username: `admin`
 - Password: `admin123`
 
 Navigate to **Queues** tab to see:
+
 - `trip.q` - Trip events
 - `driver.q` - Driver events
 - `notif.q` - Notification events
@@ -559,6 +574,7 @@ Opens an interactive dependency graph in your browser.
 ### Issue: Docker containers fail to start
 
 **Solution:**
+
 ```bash
 # Remove all containers and volumes
 docker-compose down -v
@@ -570,6 +586,7 @@ docker-compose up --build
 ### Issue: Port already in use
 
 **Solution:**
+
 ```bash
 # Check what's using the port (Windows)
 netstat -ano | findstr :5432
@@ -583,6 +600,7 @@ taskkill /PID <PID> /F
 ### Issue: Database migration errors
 
 **Solution:**
+
 ```bash
 # Reset database
 npm run migration:revert:all
@@ -594,6 +612,7 @@ npm run migration:run:all
 ### Issue: RabbitMQ connection refused
 
 **Solution:**
+
 ```bash
 # Restart RabbitMQ container
 docker-compose restart rabbitmq
@@ -605,6 +624,7 @@ docker-compose logs rabbitmq
 ### Issue: gRPC method not implemented
 
 **Solution:**
+
 ```bash
 # Regenerate proto files
 npx nx run shared:proto-gen
@@ -616,6 +636,7 @@ npx nx affected:build
 ### Issue: Supabase JWT validation fails
 
 **Solution:**
+
 - Verify `SUPABASE_JWT_SECRET` matches your Supabase project
 - Check token expiration
 - Ensure Bearer token format: `Authorization: Bearer <token>`
@@ -646,11 +667,11 @@ Comprehensive documentation is available in the `apps/docs/` directory:
 **Class:** SE360.Q11  
 **Semester:** 1st Semester, 2025-2026
 
-| Name | Student ID | Responsibilities |
-|------|------------|------------------|
-| **Không Huỳnh Ngọc Hân** | 23520427 | Auth Service, User Service, Terraform, Docker Compose, Documentation |
-| **Ngô Quang Tiến** | 23521574 | Project Init, Database Design, Driver Service, Trip Service |
-| **Nguyễn Hữu Duy** | 23520374 | Notification Service, RabbitMQ Integration |
+| Name                     | Student ID | Responsibilities                                                     |
+| ------------------------ | ---------- | -------------------------------------------------------------------- |
+| **Không Huỳnh Ngọc Hân** | 23520427   | Auth Service, User Service, Terraform, Docker Compose, Documentation |
+| **Ngô Quang Tiến**       | 23521574   | Project Init, Database Design, Driver Service, Trip Service          |
+| **Nguyễn Hữu Duy**       | 23520374   | Notification Service, RabbitMQ Integration                           |
 
 ---
 
@@ -672,6 +693,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Contact
 
 For questions or support, please reach out to:
+
 - **Email**: 23520427@gm.uit.edu.vn
 - **Repository**: https://github.com/quangtienngo661/uit-go-backend
 

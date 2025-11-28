@@ -51,8 +51,8 @@ variable "enable_alb" {
 }
 
 variable "enable_rds" {
-  type        = bool
-  default     = false
+  type    = bool
+  default = false
 }
 
 variable "db_master_username" {
@@ -85,12 +85,12 @@ variable "supabase_jwt_secret" {
 
 variable "budget_alert_emails" {
   type    = list(string)
-  default = []
+  default = ["hankhongg@gmail.com"]
 }
 
 variable "enable_budget" {
   type    = bool
-  default = false
+  default = true
 }
 
 variable "enable_anomaly_monitor" {

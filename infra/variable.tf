@@ -23,12 +23,12 @@ variable "az_count" {
 variable "container_image_map" {
   type = map(string)
   default = {
-    "api-gateway"          = "ghcr.io/quangtienngo661/uit-go-api-gateway:latest"
-    "auth-service"         = "ghcr.io/quangtienngo661/uit-go-auth:latest"
-    "user-service"         = "ghcr.io/quangtienngo661/uit-go-user:latest"
-    "trip-service"         = "ghcr.io/quangtienngo661/uit-go-trip:latest"
-    "driver-service"       = "ghcr.io/quangtienngo661/uit-go-driver:latest"
-    "notification-service" = "ghcr.io/quangtienngo661/uit-go-notification:latest"
+    "api-gateway"          = "ghcr.io/se360-uit-go/uit-go-api-gateway:latest"
+    "auth-service"         = "ghcr.io/se360-uit-go/uit-go-auth:latest"
+    "user-service"         = "ghcr.io/se360-uit-go/uit-go-user:latest"
+    "trip-service"         = "ghcr.io/se360-uit-go/uit-go-trip:latest"
+    "driver-service"       = "ghcr.io/se360-uit-go/uit-go-driver:latest"
+    "notification-service" = "ghcr.io/se360-uit-go/uit-go-notification:latest"
   }
 }
 

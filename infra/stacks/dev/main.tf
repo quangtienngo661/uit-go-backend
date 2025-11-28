@@ -22,34 +22,34 @@ locals {
   }
 
   service_cfg = {
-    "api-gateway" = { port = 3000, health = "/health" }
-    "auth-service" = { port = 3001, health = "/health" }
-    "user-service" = { port = 3002, health = "/health" }
-    "trip-service" = { port = 3003, health = "/health" }
-    "driver-service" = { port = 3004, health = "/health" }
+    "api-gateway"          = { port = 3000, health = "/health" }
+    "auth-service"         = { port = 3001, health = "/health" }
+    "user-service"         = { port = 3002, health = "/health" }
+    "trip-service"         = { port = 3003, health = "/health" }
+    "driver-service"       = { port = 3004, health = "/health" }
     "notification-service" = { port = 3005, health = "/health" }
   }
 
   default_images = {
-    "api-gateway"          = "ghcr.io/quangtienngo661/uit-go-api-gateway:latest"
-    "auth-service"         = "ghcr.io/quangtienngo661/uit-go-auth:latest"
-    "user-service"         = "ghcr.io/quangtienngo661/uit-go-user:latest"
-    "trip-service"         = "ghcr.io/quangtienngo661/uit-go-trip:latest"
-    "driver-service"       = "ghcr.io/quangtienngo661/uit-go-driver:latest"
-    "notification-service" = "ghcr.io/quangtienngo661/uit-go-notification:latest"
+    "api-gateway"          = "ghcr.io/se360-uit-go/uit-go-api-gateway:latest"
+    "auth-service"         = "ghcr.io/se360-uit-go/uit-go-auth:latest"
+    "user-service"         = "ghcr.io/se360-uit-go/uit-go-user:latest"
+    "trip-service"         = "ghcr.io/se360-uit-go/uit-go-trip:latest"
+    "driver-service"       = "ghcr.io/se360-uit-go/uit-go-driver:latest"
+    "notification-service" = "ghcr.io/se360-uit-go/uit-go-notification:latest"
   }
 
   images = merge(local.default_images, var.container_image_map)
 }
 
 module "network" {
-  source              = "../../modules/network"
-  name_prefix         = local.name_prefix
-  cidr                = var.vpc_cidr
-  az_count            = var.az_count
-  enable_nat_gateway  = true
-  single_nat_gateway  = true
-  tags                = local.tags
+  source             = "../../modules/network"
+  name_prefix        = local.name_prefix
+  cidr               = var.vpc_cidr
+  az_count           = var.az_count
+  enable_nat_gateway = true
+  single_nat_gateway = true
+  tags               = local.tags
 }
 
 module "cluster" {
@@ -62,6 +62,7 @@ resource "aws_service_discovery_private_dns_namespace" "ns" {
   name        = local.namespace
   description = "UIT-Go internal service namespace"
   vpc         = module.network.vpc_id
+  tags        = local.tags
 }
 
 module "alb" {
@@ -116,39 +117,39 @@ resource "aws_security_group" "db" {
 }
 
 module "rds_user" {
-  count                 = var.enable_rds ? 1 : 0
-  source                = "../../modules/rds"
-  name_prefix           = "${local.name_prefix}-user"
-  db_name               = "userdb"
-  username              = var.db_master_username
-  password              = coalesce(var.db_master_password, "changeme123!")
-  subnet_ids            = module.network.private_subnets
+  count                  = var.enable_rds ? 1 : 0
+  source                 = "../../modules/rds"
+  name_prefix            = "${local.name_prefix}-user"
+  db_name                = "userdb"
+  username               = var.db_master_username
+  password               = coalesce(var.db_master_password, "changeme123!")
+  subnet_ids             = module.network.private_subnets
   vpc_security_group_ids = var.enable_rds ? [aws_security_group.db[0].id] : []
-  tags                  = merge(local.tags, { Service = "user-service" })
+  tags                   = merge(local.tags, { Service = "user-service" })
 }
 
 module "rds_trip" {
-  count                 = var.enable_rds ? 1 : 0
-  source                = "../../modules/rds"
-  name_prefix           = "${local.name_prefix}-trip"
-  db_name               = "tripdb"
-  username              = var.db_master_username
-  password              = coalesce(var.db_master_password, "changeme123!")
-  subnet_ids            = module.network.private_subnets
+  count                  = var.enable_rds ? 1 : 0
+  source                 = "../../modules/rds"
+  name_prefix            = "${local.name_prefix}-trip"
+  db_name                = "tripdb"
+  username               = var.db_master_username
+  password               = coalesce(var.db_master_password, "changeme123!")
+  subnet_ids             = module.network.private_subnets
   vpc_security_group_ids = var.enable_rds ? [aws_security_group.db[0].id] : []
-  tags                  = merge(local.tags, { Service = "trip-service" })
+  tags                   = merge(local.tags, { Service = "trip-service" })
 }
 
 module "rds_driver" {
-  count                 = var.enable_rds ? 1 : 0
-  source                = "../../modules/rds"
-  name_prefix           = "${local.name_prefix}-driver"
-  db_name               = "driverdb"
-  username              = var.db_master_username
-  password              = coalesce(var.db_master_password, "changeme123!")
-  subnet_ids            = module.network.private_subnets
+  count                  = var.enable_rds ? 1 : 0
+  source                 = "../../modules/rds"
+  name_prefix            = "${local.name_prefix}-driver"
+  db_name                = "driverdb"
+  username               = var.db_master_username
+  password               = coalesce(var.db_master_password, "changeme123!")
+  subnet_ids             = module.network.private_subnets
   vpc_security_group_ids = var.enable_rds ? [aws_security_group.db[0].id] : []
-  tags                  = merge(local.tags, { Service = "driver-service" })
+  tags                   = merge(local.tags, { Service = "driver-service" })
 }
 
 locals {
@@ -200,7 +201,7 @@ locals {
 }
 
 module "services" {
-  source = "../../modules/service"
+  source   = "../../modules/service"
   for_each = local.service_cfg
 
   name_prefix      = local.name_prefix
@@ -223,16 +224,16 @@ module "services" {
 }
 
 module "finops" {
-  source               = "../../modules/finops"
-  name_prefix          = local.name_prefix
-  project              = var.project
-  region               = var.region
-  budget_alert_emails  = var.budget_alert_emails
-  enable_budget        = var.enable_budget
+  source                 = "../../modules/finops"
+  name_prefix            = local.name_prefix
+  project                = var.project
+  region                 = var.region
+  budget_alert_emails    = var.budget_alert_emails
+  enable_budget          = var.enable_budget
   enable_anomaly_monitor = var.enable_anomaly_monitor
-  finops_team_email    = var.finops_team_email
-  sns_topic_arn        = var.sns_topic_arn
-  cluster_name         = module.cluster.cluster_name
-  log_group_name       = module.cluster.log_group_name
-  tags                 = local.tags
+  finops_team_email      = var.finops_team_email
+  sns_topic_arn          = var.sns_topic_arn
+  cluster_name           = module.cluster.cluster_name
+  log_group_name         = module.cluster.log_group_name
+  tags                   = local.tags
 }

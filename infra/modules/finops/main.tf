@@ -50,8 +50,26 @@ variable "tags" {
   default = {}
 }
 
+locals {
+  budget_emails = length(var.budget_alert_emails) > 0
+    ? var.budget_alert_emails
+    : (var.finops_team_email != "" ? [var.finops_team_email] : [])
+}
+
+variable "service_names" {
+  description = "List of service tag values for cost categorization"
+  type        = list(string)
+  default     = []
+}
+
+variable "infrastructure_components" {
+  description = "Infrastructure component tag values for cost categorization"
+  type        = list(string)
+  default     = ["vpc", "nat", "alb"]
+}
+
 resource "aws_budgets_budget" "monthly" {
-  count             = var.enable_budget && length(var.budget_alert_emails) > 0 ? 1 : 0
+  count             = var.enable_budget && length(local.budget_emails) > 0 ? 1 : 0
   name              = "${var.name_prefix}-monthly-budget"
   budget_type       = "COST"
   limit_amount      = "500"
@@ -63,7 +81,7 @@ resource "aws_budgets_budget" "monthly" {
     threshold                  = 80
     threshold_type             = "PERCENTAGE"
     notification_type          = "ACTUAL"
-    subscriber_email_addresses = var.budget_alert_emails
+    subscriber_email_addresses = local.budget_emails
   }
 
   notification {
@@ -71,7 +89,7 @@ resource "aws_budgets_budget" "monthly" {
     threshold                  = 100
     threshold_type             = "PERCENTAGE"
     notification_type          = "FORECASTED"
-    subscriber_email_addresses = var.budget_alert_emails
+    subscriber_email_addresses = local.budget_emails
   }
 
   cost_filter {
@@ -161,6 +179,40 @@ resource "aws_cloudwatch_dashboard" "finops" {
       }
     ]
   })
+}
+
+resource "aws_ce_cost_category" "project_category" {
+  count        = length(var.service_names) + length(var.infrastructure_components) > 0 ? 1 : 0
+  name         = "${var.name_prefix}-cost-category"
+  rule_version = "CostCategoryExpression.v1"
+
+  dynamic "rule" {
+    for_each = var.service_names
+    content {
+      value = rule.value
+      rule {
+        tags {
+          key    = "Service"
+          values = [rule.value]
+        }
+      }
+    }
+  }
+
+  dynamic "rule" {
+    for_each = var.infrastructure_components
+    content {
+      value = "infrastructure-${rule.value}"
+      rule {
+        tags {
+          key    = "Component"
+          values = [rule.value]
+        }
+      }
+    }
+  }
+
+  tags = var.tags
 }
 
 resource "aws_cloudwatch_metric_alarm" "ecs_high_cpu" {
