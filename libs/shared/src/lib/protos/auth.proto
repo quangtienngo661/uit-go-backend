@@ -76,3 +76,5 @@ message CheckVerificationRequest {
 message CheckVerificationResponse {
   bool isVerified = 1;
 }
+
+

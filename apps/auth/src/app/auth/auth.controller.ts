@@ -30,4 +30,5 @@ export class AuthController implements authPackage.AuthServiceController {
   async checkVerification(request: authPackage.CheckVerificationRequest): Promise<authPackage.CheckVerificationResponse> {
     return this.authService.checkVerification(request);
   }
+
 }

@@ -164,4 +164,5 @@ export class AuthService {
     }
     return { isVerified: !!user.confirmed_at };
   }
+
 }

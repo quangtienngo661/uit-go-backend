@@ -8,8 +8,6 @@ import { DriverProfile } from './entities/driver-profile.entity';
 import { CreateDriverProfileDto } from './dto/create-driver-profile.dto';
 import { UpdateDriverProfileDto } from './dto/update-driver-profile.dto';
 import { Role } from '@uit-go-backend/shared';
-import { SupabaseStorageService } from '@uit-go-backend/supabase-storage';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class UsersService {
