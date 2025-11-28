@@ -53,11 +53,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+      - name: Configure Terraform AWS credentials
+        run: |
+          run: |
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+          echo "AWS_REGION=${{ env.AWS_REGION }}" >> $GITHUB_ENV
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
@@ -80,12 +81,6 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/uit-go-${{ env.SERVICE }}:${{ env.IMAGE_TAG }}
             ghcr.io/${{ github.repository_owner }}/uit-go-${{ env.SERVICE }}:${{ github.sha }}
-      - name: Configure Terraform AWS Provider
-        run: |
-          run: |
-          echo "AWS_ACCESS_KEY_ID=${{ env.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=${{ env.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
-          echo "AWS_REGION=${{ env.AWS_DEFAULT_REGION }}" >> $GITHUB_ENV
 
       - name: Terraform init
         working-directory: infra/stacks/${{ env.ENVIRONMENT }}
