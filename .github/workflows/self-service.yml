@@ -80,6 +80,12 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/uit-go-${{ env.SERVICE }}:${{ env.IMAGE_TAG }}
             ghcr.io/${{ github.repository_owner }}/uit-go-${{ env.SERVICE }}:${{ github.sha }}
+      - name: Configure Terraform AWS Provider
+        run: |
+          run: |
+          echo "AWS_ACCESS_KEY_ID=${{ env.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=${{ env.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+          echo "AWS_REGION=${{ env.AWS_DEFAULT_REGION }}" >> $GITHUB_ENV
 
       - name: Terraform init
         working-directory: infra/stacks/${{ env.ENVIRONMENT }}
