@@ -1,0 +1,21 @@
+{
+  "name": "supabase-storage",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/supabase-storage/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project supabase-storage --web",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/supabase-storage",
+        "main": "libs/supabase-storage/src/index.ts",
+        "tsConfig": "libs/supabase-storage/tsconfig.lib.json",
+        "rootDir": ".",
+        "assets": []
+      }
+    }
+  }
+}

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
+import { SupabaseStorageModule } from '@uit-go-backend/supabase-storage';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UserController } from './user.controller';
         },
       },
     ]),
+    SupabaseStorageModule,
   ],
   controllers: [UserController],
   providers: [UserService],

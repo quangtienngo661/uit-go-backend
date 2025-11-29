@@ -27,6 +27,10 @@ export class UsersService {
     const user = this.userRepository.create({
       ...createUserDto,
     });
+    if (createUserDto.avatarUrl) {
+      user.avatarUrl = createUserDto.avatarUrl;
+    }
+
     return this.userRepository.save(user);
   }
 
@@ -51,6 +55,9 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
     Object.assign(user, updateUserDto);
+    if (updateUserDto.avatarUrl) {
+      user.avatarUrl = updateUserDto.avatarUrl;
+    }
     return this.userRepository.save(user);
   }
 
